@@ -1,31 +1,39 @@
-// service-worker.js — cache-first for GitHub Pages subpath
-const CACHE = 'hvac-pro-v5-1';
-const ASSETS = [
-  '/Hvac-troubleshooter-/',
-  '/Hvac-troubleshooter-/index.html?v=5.1',
-  '/Hvac-troubleshooter-/manifest.json',
-  '/Hvac-troubleshooter-/icon-192.png',
-  '/Hvac-troubleshooter-/icon-512.png'
+// service-worker.js — robust for GitHub Pages subpath (v5.1b)
+const CACHE = 'hvac-pro-v5-1b';
+const ROOT = '/Hvac-troubleshooter-/';
+const CORE = [
+  ROOT,
+  ROOT + 'index.html',
+  ROOT + 'manifest.json',
+  ROOT + 'icon-192.png',
+  ROOT + 'icon-512.png'
 ];
 self.addEventListener('install', (evt) => {
-  evt.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
+  evt.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
   self.skipWaiting();
 });
 self.addEventListener('activate', (evt) => {
   evt.waitUntil(self.clients.claim());
 });
 self.addEventListener('fetch', (evt) => {
-  if (evt.request.method !== 'GET') return;
+  const url = new URL(evt.request.url);
+  // Only handle our subpath
+  if (!url.pathname.startsWith(ROOT)) return;
+  // For navigations, use network-first to avoid stale HTML
+  if (evt.request.mode === 'navigate') {
+    evt.respondWith(fetch(evt.request).then(resp => {
+      const copy = resp.clone();
+      caches.open(CACHE).then(c => c.put(url.pathname, copy));
+      return resp;
+    }).catch(() => caches.match(ROOT + 'index.html', { ignoreSearch: true })));
+    return;
+  }
+  // For assets, cache-first with ignoreSearch so ?v=... still works
   evt.respondWith(
-    caches.match(evt.request).then(resp => {
-      return resp || fetch(evt.request).then(networkResp => {
-        return caches.open(CACHE).then(cache => {
-          if (evt.request.url.startsWith(self.location.origin)) {
-            cache.put(evt.request, networkResp.clone());
-          }
-          return networkResp;
-        });
-      }).catch(() => caches.match('/Hvac-troubleshooter-/index.html?v=5.1'));
-    })
+    caches.match(evt.request, { ignoreSearch: true }).then(cached => cached || fetch(evt.request).then(net => {
+      const copy = net.clone();
+      caches.open(CACHE).then(c => c.put(evt.request, copy));
+      return net;
+    }))
   );
 });
