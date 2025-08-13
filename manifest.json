@@ -1,7 +1,7 @@
 {
   "name": "HVAC Troubleshooter Pro",
   "short_name": "HVAC Pro",
-  "start_url": "/Hvac-troubleshooter-/index.html",
+  "start_url": "/Hvac-troubleshooter-/index.html?v=4",
   "scope": "/Hvac-troubleshooter-/",
   "display": "standalone",
   "background_color": "#0b1522",

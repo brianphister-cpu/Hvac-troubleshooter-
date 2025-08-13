@@ -128,8 +128,8 @@
           </div>
 
           <div style="display:flex;gap:8px;margin-top:12px">
-            <button class="btn primary" id="diagBtn">Diagnose</button>
-            <button class="btn secondary" id="saveBtn">Save Reading</button>
+            <button class="btn primary" id="diagBtn" onclick="_diagClick()">Diagnose</button>
+            <button class="btn secondary" id="saveBtn" onclick="_saveClick()">Save Reading</button>
           </div>
         </div>
       </div>
@@ -172,7 +172,7 @@
         </div>
         <div class="history" id="historyList">No saved readings.</div>
       </div>
-      <div class="debug" id="debugBox">Debug: page loaded</div>
+      <div class="debug" id="debugBox">Debug v4: ready • clicks: 0</div>
     </aside>
   </div>
 
@@ -180,50 +180,62 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const dbg = document.getElementById('debugBox');
-  function log(s){ if(dbg) dbg.textContent = 'Debug: ' + s; console.log('[HVAC]', s); }
+(function(){
+  // Basic helpers
+  function $(id){return document.getElementById(id);}
+  function toNum(v){ const n=Number(v); return isNaN(n)?null:n; }
+  function round1(n){ return n==null?null:Math.round(n*10)/10; }
+
+  // Debug UI
+  const dbg = $('debugBox');
+  let clicks = 0;
+  function setDebug(msg){ if(dbg) dbg.textContent = 'Debug v4: ' + msg + ' • clicks: ' + clicks; }
 
   // Install button logic
   let deferredPrompt;
-  const installBtn = document.getElementById('installBtn');
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block'; log('beforeinstallprompt fired'); });
-  installBtn.addEventListener('click', async () => { if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display = 'none'; log('install prompt shown'); });
+  const installBtn = $('installBtn');
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block'; setDebug('install prompt ready'); });
+  if (installBtn) installBtn.addEventListener('click', async () => { if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display = 'none'; setDebug('appinstalled via prompt'); });
   function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
   if (isStandalone()) installBtn.style.display = 'none';
-  window.addEventListener('appinstalled', ()=>{ installBtn.style.display='none'; log('appinstalled'); });
+  window.addEventListener('appinstalled', ()=>{ if (installBtn) installBtn.style.display='none'; setDebug('appinstalled event'); });
 
-  // Embedded PT tables
+  // PT tables
   const DEFAULT_PT = {
     R410A:[{t:30,p:99},{t:35,p:109},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:156},{t:60,p:170},{t:65,p:185},{t:70,p:201},{t:75,p:218},{t:80,p:236},{t:85,p:277},{t:90,p:299},{t:95,p:321},{t:100,p:344},{t:105,p:368},{t:110,p:393},{t:115,p:418},{t:120,p:444},{t:125,p:471},{t:130,p:499}],
     R32:[{t:30,p:71},{t:35,p:80},{t:40,p:90},{t:45,p:101},{t:50,p:112},{t:55,p:124},{t:60,p:137},{t:65,p:150},{t:70,p:164},{t:75,p:179},{t:80,p:195},{t:85,p:211},{t:90,p:228}],
     R454B:[{t:30,p:82},{t:35,p:91},{t:40,p:100},{t:45,p:110},{t:50,p:121},{t:55,p:132},{t:60,p:144},{t:65,p:156},{t:70,p:169},{t:75,p:182},{t:80,p:196},{t:85,p:210},{t:90,p:225}],
     R22:[{t:30,p:78},{t:35,p:89},{t:40,p:102},{t:45,p:115},{t:50,p:129},{t:55,p:145},{t:60,p:161},{t:65,p:179},{t:70,p:198},{t:75,p:219},{t:80,p:242}]
   };
-  let PT = JSON.parse(JSON.stringify(DEFAULT_PT));
-  function toNum(v){ const n=Number(v); return isNaN(n)?null:n; }
-  function round1(n){ return n==null?null:Math.round(n*10)/10; }
+
   function pressureToSatTemp(refrig, psig){
-    const table = PT[refrig]; if(!table || psig==null) return null;
+    const table = DEFAULT_PT[refrig]; if(!table || psig==null) return null;
     if(psig <= table[0].p) return table[0].t; if(psig >= table[table.length-1].p) return table[table.length-1].t;
     for(let i=0;i<table.length-1;i++){ const a=table[i], b=table[i+1]; if(psig >= a.p && psig <= b.p){ const f=(psig-a.p)/(b.p-a.p); return a.t + f*(b.t-a.t); } }
     return null;
   }
+
   function diagnoseAll(d){
     const evapSat = pressureToSatTemp(d.refrig, d.suctionP);
     const condSat = pressureToSatTemp(d.refrig, d.liquidP);
     const superheat = (d.suctionT!=null && evapSat!=null)? d.suctionT - evapSat : null;
     const subcool  = (d.liquidT!=null && condSat!=null)?  condSat - d.liquidT : null;
     const deltaT   = (d.supplyT!=null && d.returnT!=null)? d.returnT - d.supplyT : null;
+
     let causes = {'Undercharge (low refrigerant)':10,'Overcharge (too much refrigerant)':6,'Restriction — metering device / drier':6,'Low airflow across evaporator':6,'Non-condensables (air in system)':4,'Compressor mechanical issue (valves/leak)':4};
     function add(k,pts){ if(causes[k]!==undefined) causes[k]+=pts; }
-    if(superheat!=null && d.targetSH!=null){ const ds = superheat - d.targetSH;
+
+    if(superheat!=null && d.targetSH!=null){
+      const ds = superheat - d.targetSH;
       if(ds >= 8){ add('Undercharge (low refrigerant)',18); add('Low airflow across evaporator',8); add('Restriction — metering device / drier',6); }
       else if(ds <= -6){ add('Overcharge (too much refrigerant)',18); add('Restriction — metering device / drier',4); }
-      else if(Math.abs(ds) >= 4){ add(ds>0?'Undercharge (low refrigerant)':'Overcharge (too much refrigerant)',6); } }
-    if(subcool!=null && d.targetSC!=null){ const dc = subcool - d.targetSC;
+      else if(Math.abs(ds) >= 4){ add(ds>0?'Undercharge (low refrigerant)':'Overcharge (too much refrigerant)',6); }
+    }
+    if(subcool!=null && d.targetSC!=null){
+      const dc = subcool - d.targetSC;
       if(dc >= 8){ add('Overcharge (too much refrigerant)',16); add('Restriction — metering device / drier',8); }
-      else if(dc <= -4){ add('Undercharge (low refrigerant)',14); } }
+      else if(dc <= -4){ add('Undercharge (low refrigerant)',14); }
+    }
     if(d.suctionP!=null && d.liquidP!=null){
       if(d.suctionP < 105 && d.liquidP < 320) add('Undercharge (low refrigerant)',14);
       if(d.suctionP < 105 && d.liquidP > 380){ add('Low airflow across evaporator',12); add('Non-condensables (air in system)',10); }
@@ -232,9 +244,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if(deltaT!=null){ if(deltaT < 12) add('Low airflow across evaporator',18); else if(deltaT > 28) add('Low airflow across evaporator',8); }
     if(d.outdoorDb!=null && d.liquidP!=null){ if(d.outdoorDb > 95 && d.liquidP > 480) add('Non-condensables (air in system)',8); }
+
     let ranked = Object.keys(causes).map(k=>({cause:k,score:causes[k]})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
     const total = ranked.reduce((s,i)=>s+i.score,0)||1; ranked.forEach(a=>a.pct=Math.round((a.score/total)*100));
     const primary = ranked[0] ? ranked[0] : {cause:'Insufficient data',pct:0};
+
     let steps = [];
     if(primary.cause.includes('Undercharge')) steps.push('Perform leak check; charge to manufacturer spec using subcooling/superheat targets.');
     if(primary.cause.includes('Overcharge')) steps.push('Recover to target subcool; verify after stabilization and re-check airflow.');
@@ -242,9 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if(primary.cause.includes('Low airflow')) steps.push('Verify filter, blower amps, coil cleanliness, and duct dampers; measure CFM if possible.');
     if(primary.cause.includes('Non-condensables')) steps.push('Deep recovery & vacuum; recharge by weight. Watch head pressure behavior.');
     if(primary.cause.includes('Compressor')) steps.push('Check amp draw and consider valve/leak-down tests; verify compression ratio.');
+
     return {details:{evapSat:round1(evapSat),condSat:round1(condSat),superheat:superheat==null?null:round1(superheat),subcool:subcool==null?null:round1(subcool),deltaT:deltaT==null?null:round1(deltaT)}, ranked, primary, steps};
   }
-  function $(id){return document.getElementById(id);}
+
   function readInputs(){ return {
     refrig: $('refrig').value, systemType: $('systemType').value,
     indoorDb: toNum($('indoorDb').value), indoorWb: toNum($('indoorWb').value), outdoorDb: toNum($('outdoorDb').value),
@@ -253,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     liquidP: toNum($('liquidP').value), liquidT: toNum($('liquidT').value),
     supplyT: toNum($('supplyT').value), returnT: toNum($('returnT').value)
   }; }
+
   function renderResults(r){
     $('primaryFault').textContent = r.primary.cause; $('confPct').textContent = (r.primary.pct||0)+'%';
     $('evapSat').textContent = r.details.evapSat==null?'—':r.details.evapSat+' °F';
@@ -260,32 +276,53 @@ document.addEventListener('DOMContentLoaded', () => {
     $('superheat').textContent = r.details.superheat==null?'—':r.details.superheat+' °F';
     $('subcool').textContent = r.details.subcool==null?'—':r.details.subcool+' °F';
     $('deltat').textContent = r.details.deltaT==null?'—':r.details.deltaT+' °F';
-    const list=document.getElementById('causesList'); list.innerHTML='';
+    const list=$('causesList'); list.innerHTML='';
     r.ranked.forEach(it=>{ const row=document.createElement('div'); row.className='cause';
       row.innerHTML=`<div>${it.cause}</div><div class="bar"><i style="width:${it.pct}%"></i></div><div style="min-width:48px;text-align:right">${it.pct}%</div>`;
       list.appendChild(row); });
-    const ns=document.getElementById('nextSteps'); ns.innerHTML=''; r.steps.forEach(s=>{ const li=document.createElement('li'); li.textContent=s; ns.appendChild(li); });
+    const ns=$('nextSteps'); ns.innerHTML=''; r.steps.forEach(s=>{ const li=document.createElement('li'); li.textContent=s; ns.appendChild(li); });
   }
-  const HIST_KEY='hvac_hist_v1';
-  function loadHist(){ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return [];} }
-  function saveHist(a){ localStorage.setItem(HIST_KEY, JSON.stringify(a)); }
-  function addHist(entry){ const a=loadHist(); a.unshift(entry); if(a.length>200) a.pop(); saveHist(a); renderHist(); }
-  function renderHist(){ const list=document.getElementById('historyList'); const a=loadHist(); if(a.length===0){list.textContent='No saved readings.'; return;} list.innerHTML=''; a.forEach((h,i)=>{ const d=document.createElement('div'); d.className='hist';
-    d.innerHTML=`<div><strong>${h.refrig}</strong> · ${h.time}<br><span style="color:var(--muted);font-size:12px">SP:${h.suctionP}psi ST:${h.suctionT}°F · LP:${h.liquidP}psi LT:${h.liquidT}°F · ΔT:${h.deltaT??'—'}°F</span></div>`;
-    const del=document.createElement('button'); del.textContent='Del'; del.className='btn'; del.style.padding='6px'; del.style.borderRadius='8px'; del.style.background='linear-gradient(90deg,#ff7b7b,#ffb3b3)'; del.style.color='#02111a';
-    del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); }; d.appendChild(del); list.appendChild(d); }); }
-  const dbg = document.getElementById('debugBox');
-  const diagBtn = document.getElementById('diagBtn');
-  const saveBtn = document.getElementById('saveBtn');
-  if (diagBtn) { diagBtn.addEventListener('click', ()=>{ const d=readInputs();
-      if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
-      const r=diagnoseAll(d); renderResults(r); if(dbg) dbg.textContent='Debug: Diagnose clicked ✓';
-  }); if(dbg) dbg.textContent='Debug: Diagnose listener bound'; }
-  if (saveBtn) { saveBtn.addEventListener('click', ()=>{ const d=readInputs(); const now=new Date(); const deltaT=(d.supplyT!=null&&d.returnT!=null)?(d.returnT-d.supplyT):null;
-      addHist({time:now.toLocaleString(), refrig:d.refrig, suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, deltaT}); alert('Saved to history.'); if(dbg) dbg.textContent='Debug: Saved reading'; }); }
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('/Hvac-troubleshooter-/service-worker.js').then(()=>{ if(dbg) dbg.textContent='Debug: SW registered'; }).catch(()=>{ if(dbg) dbg.textContent='Debug: SW failed'; }); }
-  renderHist(); if(dbg && !dbg.textContent) dbg.textContent='Debug: JS loaded';
-});
+
+  // Expose fallback inline handlers
+  window._diagClick = function(){
+    clicks++; setDebug('diagnose clicked');
+    const d = readInputs();
+    if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
+    const r = diagnoseAll(d);
+    renderResults(r);
+  };
+  window._saveClick = function(){
+    clicks++; setDebug('save clicked');
+    const d = readInputs(); const now=new Date();
+    const deltaT=(d.supplyT!=null&&d.returnT!=null)?(d.returnT-d.supplyT):null;
+    // history: store in localStorage
+    const key='hvac_hist_v1';
+    let a=[]; try{ a = JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){ a=[]; }
+    a.unshift({time:now.toLocaleString(), refrig:d.refrig, suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, deltaT});
+    if(a.length>200) a.pop();
+    localStorage.setItem(key, JSON.stringify(a));
+    alert('Saved to history.');
+  };
+
+  // Hook export/clear (listeners attached on load; not critical if omitted)
+  document.addEventListener('DOMContentLoaded', function(){
+    const exportBtn = $('exportHist');
+    const clearBtn = $('clearHist');
+    if (exportBtn) exportBtn.addEventListener('click', ()=>{
+      let rows=[]; try{ rows = JSON.parse(localStorage.getItem('hvac_hist_v1')||'[]'); }catch(e){ rows=[]; }
+      if(rows.length===0){alert('No history to export.'); return;}
+      const cols=['time','refrig','suctionP','suctionT','liquidP','liquidT','deltaT'];
+      const csv=[cols.join(',')].concat(rows.map(r=>cols.map(c=>r[c]??'').join(','))).join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history.csv'; a.click();
+    });
+    if (clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.setItem('hvac_hist_v1','[]'); } });
+  });
+
+  // Register service worker
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('/Hvac-troubleshooter-/service-worker.js').catch(()=>{}); }
+
+  setDebug('ready');
+})();
 </script>
 </body>
 </html>
