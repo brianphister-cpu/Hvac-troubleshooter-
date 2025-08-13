@@ -1,8 +1,8 @@
 // service-worker.js — cache-first for GitHub Pages subpath
-const CACHE = 'hvac-pro-v4';
+const CACHE = 'hvac-pro-v5';
 const ASSETS = [
   '/Hvac-troubleshooter-/',
-  '/Hvac-troubleshooter-/index.html?v=4',
+  '/Hvac-troubleshooter-/index.html?v=5',
   '/Hvac-troubleshooter-/manifest.json',
   '/Hvac-troubleshooter-/icon-192.png',
   '/Hvac-troubleshooter-/icon-512.png'
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (evt) => {
           }
           return networkResp;
         });
-      }).catch(() => caches.match('/Hvac-troubleshooter-/index.html?v=4'));
+      }).catch(() => caches.match('/Hvac-troubleshooter-/index.html?v=5'));
     })
   );
 });

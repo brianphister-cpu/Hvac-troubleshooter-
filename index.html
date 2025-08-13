@@ -7,45 +7,50 @@
 <title>HVAC Troubleshooter Pro</title>
 <link rel="manifest" href="/Hvac-troubleshooter-/manifest.json">
 <link rel="icon" href="/Hvac-troubleshooter-/icon-192.png">
-<meta name="theme-color" content="#0b1522" />
+<meta name="theme-color" content="#e4eef8" />
 <style>
-  :root{ --bg:#07121a; --panel:#0b1522; --muted:#9aa6b2;
-         --low:#1ea7ff; --high:#ff6b4a; --meter:#38d39f; --accent:#6ea8ff; --ink:#e6eef6; }
-  html,body{margin:0;height:100%;font-family:Inter,system-ui,Roboto,Arial;background:linear-gradient(180deg,#07121a,#041018);color:var(--ink)}
-  .app{max-width:1180px;margin:18px auto;padding:18px}
+  :root{
+    --bg:#eef5fb; --bg2:#f7fbff; --panel:#ffffff; --ink:#0c263b;
+    --muted:#5a748a; --line:#d8e6f3; --accent:#3e8cff;
+    --cool:#2c9fff; --hot:#ff6a3d; --meter:#31c48d;
+  }
+  html,body{margin:0;height:100%;font-family:Inter,system-ui,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--ink)}
+  .app{max-width:1160px;margin:18px auto;padding:18px}
   header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--low),var(--high));display:flex;align-items:center;justify-content:center;font-weight:900;color:#001018}
-  h1{margin:0;font-size:20px}
+  .logo{width:56px;height:56px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(62,140,255,0.15)}
+  .logo img{width:40px;height:40px;border-radius:10px}
+  h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.2px}
   p.lead{margin:2px 0 0;color:var(--muted);font-size:13px}
-  #installBtn{display:none;padding:10px 14px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(90deg,#6ea8ff,#4dd0ff);color:#02111a;cursor:pointer}
-  .main{display:grid;grid-template-columns:1fr 480px;gap:16px;margin-top:18px}
-  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:14px}
+  #installBtn{display:none;padding:10px 14px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(90deg,#7eb5ff,#a8e0ff);color:#0a1c2a;cursor:pointer;box-shadow:0 6px 14px rgba(62,140,255,0.25)}
+  .main{display:grid;grid-template-columns:1fr 460px;gap:16px;margin-top:18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 8px 22px rgba(10,30,50,0.06)}
   .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-  input,select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--ink);font-size:15px}
-  .section-title{font-size:13px;color:var(--muted);margin:10px 0 8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
-  .btn{padding:12px;border-radius:10px;border:0;cursor:pointer;font-weight:800}
-  .btn.primary{background:linear-gradient(90deg,var(--accent),#4dd0ff);color:#02111a}
-  .btn.secondary{background:linear-gradient(90deg,#6b7280,#9aa6b2);color:#02111a}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fcfdff;color:var(--ink);font-size:15px}
+  .section-title{font-size:12px;color:var(--muted);margin:6px 0 8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+  .btn{padding:12px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:800}
+  .btn.primary{background:linear-gradient(90deg,#6fabff,#8fd4ff);color:#0a1c2a;box-shadow:0 8px 16px rgba(111,171,255,0.35)}
+  .btn.secondary{background:#eef5fb;color:#0a1c2a;border:1px solid var(--line)}
   .metric-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
-  .metric{background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;min-width:120px}
+  .metric{background:#f6fbff;border:1px solid var(--line);padding:10px;border-radius:10px;min-width:120px}
   .metric .k{font-size:12px;color:var(--muted)} .metric .v{font-weight:900}
-  .cause{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(0,0,0,0.05));margin-top:8px}
-  .bar{flex:1;height:10px;background:rgba(255,255,255,0.12);border-radius:6px;overflow:hidden}
-  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--low),var(--high))}
-  .history{max-height:220px;overflow:auto} .hist{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:8px;border-radius:8px;margin-top:6px}
-  .legend{display:flex;gap:10px;color:var(--muted);font-size:12px}
-  .debug{margin-top:10px;font-size:12px;color:#a0f0ff;background:rgba(110,168,255,0.1);border:1px solid rgba(110,168,255,0.3);padding:8px;border-radius:10px}
+  .cause{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f6fbff;border:1px solid var(--line);margin-top:8px}
+  .bar{flex:1;height:10px;background:#e8f2fc;border-radius:6px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--cool),var(--hot))}
+  .history{max-height:220px;overflow:auto}
+  .hist{display:flex;justify-content:space-between;align-items:center;background:#f9fcff;border:1px solid var(--line);padding:8px;border-radius:8px;margin-top:6px}
+  .legend{display:flex;gap:10px;color:var(--muted);font-size:12px;align-items:center}
+  .legend i{display:inline-block;width:14px;height:10px;border-radius:3px}
   @media(max-width:980px){.main{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV" style="width:36px;height:36px;border-radius:8px"></div>
+    <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
       <h1>HVAC Troubleshooter — Pro</h1>
-      <p class="lead">Clean illustrated cycle • Offline-capable PWA • R410A, R32, R454B, R22</p>
+      <p class="lead">Realistic cycle diagram • Lighter UI • Offline PWA • R410A, R32, R454B, R22</p>
     </div>
     <button id="installBtn">Install HVAC Troubleshooter Pro</button>
   </header>
@@ -74,42 +79,90 @@
         <div><label>Target Subcool (°F)</label><input id="targetSC" type="number" value="10"></div>
       </div>
 
-      <hr style="margin:12px 0;border:0;border-top:1px solid rgba(255,255,255,0.06)">
+      <hr style="margin:12px 0;border:0;border-top:1px solid var(--line)">
 
-      <div class="section-title">Illustrated Refrigerant Cycle</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center">
+      <div class="section-title">Refrigerant Cycle (Realistic)</div>
+      <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:12px;align-items:center">
         <div id="diagram" aria-label="Refrigerant cycle diagram">
-          <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
-            <g id="evap" transform="translate(40,250)">
-              <rect x="0" y="0" width="260" height="90" rx="12" fill="rgba(30,167,255,0.08)" stroke="rgba(30,167,255,0.3)"/>
-              <text x="130" y="52" text-anchor="middle" fill="#bfe9ff" font-size="14">Evaporator Coil</text>
+          <!-- More realistic SVG with finned coils, arrows, and components -->
+          <svg viewBox="0 0 880 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+            <!-- Evaporator (finned coil) -->
+            <g transform="translate(30,250)">
+              <rect x="0" y="0" width="300" height="110" rx="12" fill="#eaf6ff" stroke="#cfe7fb"/>
+              <!-- fins -->
+              <g stroke="#d8ecff">
+                <line x1="10" y1="10" x2="10" y2="100"/><line x1="25" y1="10" x2="25" y2="100"/><line x1="40" y1="10" x2="40" y2="100"/>
+                <line x1="55" y1="10" x2="55" y2="100"/><line x1="70" y1="10" x2="70" y2="100"/><line x1="85" y1="10" x2="85" y2="100"/>
+                <line x1="100" y1="10" x2="100" y2="100"/><line x1="115" y1="10" x2="115" y2="100"/><line x1="130" y1="10" x2="130" y2="100"/>
+                <line x1="145" y1="10" x2="145" y2="100"/><line x1="160" y1="10" x2="160" y2="100"/><line x1="175" y1="10" x2="175" y2="100"/>
+                <line x1="190" y1="10" x2="190" y2="100"/><line x1="205" y1="10" x2="205" y2="100"/><line x1="220" y1="10" x2="220" y2="100"/>
+                <line x1="235" y1="10" x2="235" y2="100"/><line x1="250" y1="10" x2="250" y2="100"/><line x1="265" y1="10" x2="265" y2="100"/>
+                <line x1="280" y1="10" x2="280" y2="100"/><line x1="295" y1="10" x2="295" y2="100"/>
+              </g>
+              <text x="150" y="62" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="700">Evaporator Coil</text>
             </g>
-            <path d="M300 295 C 350 295, 360 200, 410 200" stroke="var(--low)" stroke-width="6" fill="none"/>
-            <g id="comp" transform="translate(410,150)">
-              <rect x="0" y="0" width="100" height="100" rx="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.18)"/>
-              <text x="50" y="58" text-anchor="middle" fill="#ffd8c8" font-size="14">Compressor</text>
+
+            <!-- Suction line to compressor (cool arrow) -->
+            <path d="M330 305 C 380 305, 395 210, 450 210" stroke="var(--cool)" stroke-width="8" fill="none" marker-end="url(#arrowCool)"/>
+
+            <!-- Compressor (cylinder) -->
+            <g transform="translate(450,150)">
+              <rect x="0" y="0" width="120" height="120" rx="20" fill="#fff" stroke="#d5e4f2"/>
+              <circle cx="60" cy="60" r="20" fill="#f3f9ff" stroke="#cfe2f1"/>
+              <text x="60" y="66" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="700">Compressor</text>
             </g>
-            <path d="M510 200 C 560 200, 580 150, 620 150" stroke="var(--high)" stroke-width="6" fill="none"/>
-            <g id="cond" transform="translate(620,90)">
-              <rect x="0" y="0" width="100" height="120" rx="12" fill="rgba(255,107,74,0.08)" stroke="rgba(255,107,74,0.3)"/>
-              <text x="50" y="66" text-anchor="middle" fill="#ffd8c8" font-size="14">Condenser</text>
+
+            <!-- Discharge to condenser (hot arrow) -->
+            <path d="M570 210 C 620 210, 650 170, 700 170" stroke="var(--hot)" stroke-width="8" fill="none" marker-end="url(#arrowHot)"/>
+
+            <!-- Condenser (finned coil) -->
+            <g transform="translate(700,100)">
+              <rect x="0" y="0" width="140" height="140" rx="12" fill="#ffeae4" stroke="#ffd4c8"/>
+              <!-- fins -->
+              <g stroke="#ffdcd2">
+                <line x1="10" y1="10" x2="10" y2="130"/><line x1="25" y1="10" x2="25" y2="130"/><line x1="40" y1="10" x2="40" y2="130"/>
+                <line x1="55" y1="10" x2="55" y2="130"/><line x1="70" y1="10" x2="70" y2="130"/><line x1="85" y1="10" x2="85" y2="130"/>
+                <line x1="100" y1="10" x2="100" y2="130"/><line x1="115" y1="10" x2="115" y2="130"/><line x1="130" y1="10" x2="130" y2="130"/>
+              </g>
+              <text x="70" y="78" text-anchor="middle" fill="#7a3b2b" font-size="14" font-weight="700">Condenser</text>
             </g>
-            <path d="M620 210 C 560 210, 520 320, 470 320" stroke="var(--high)" stroke-width="6" fill="none"/>
-            <g id="meter" transform="translate(430,300)">
-              <rect x="0" y="0" width="80" height="48" rx="10" fill="rgba(56,211,159,0.10)" stroke="rgba(56,211,159,0.3)"/>
-              <text x="40" y="30" text-anchor="middle" fill="#c9ffea" font-size="13">Meter</text>
+
+            <!-- Liquid line to metering device (hot to meter) -->
+            <path d="M700 240 C 640 240, 580 320, 520 320" stroke="var(--hot)" stroke-width="8" fill="none"/>
+
+            <!-- Metering device (TXV symbol-ish) -->
+            <g transform="translate(500,300)">
+              <rect x="0" y="0" width="100" height="50" rx="10" fill="#f2fff9" stroke="#cfeedd"/>
+              <path d="M10 25 L90 25" stroke="#31c48d" stroke-width="3"/>
+              <circle cx="50" cy="25" r="8" fill="none" stroke="#31c48d" stroke-width="3"/>
+              <text x="50" y="42" text-anchor="middle" fill="#2b5b7a" font-size="12" font-weight="700">Meter</text>
             </g>
-            <path d="M430 320 C 360 320, 340 295, 300 295" stroke="var(--low)" stroke-width="6" fill="none"/>
+
+            <!-- Liquid to meter arrow -->
+            <path d="M520 320 C 470 320, 430 305, 350 305" stroke="var(--hot)" stroke-width="8" fill="none" marker-end="url(#arrowHot)"/>
+
+            <!-- Meter to evaporator (cool arrow) -->
+            <path d="M350 305 C 330 305, 320 305, 330 305" stroke="var(--cool)" stroke-width="8" fill="none" marker-end="url(#arrowCool)"/>
+
+            <!-- Arrow markers -->
+            <defs>
+              <marker id="arrowCool" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L6,3 z" fill="var(--cool)"/>
+              </marker>
+              <marker id="arrowHot" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L6,3 z" fill="var(--hot)"/>
+              </marker>
+            </defs>
           </svg>
           <div class="legend" style="margin-top:6px">
-            <span>Low side</span><span style="width:12px;height:12px;background:var(--low);display:inline-block;border-radius:3px"></span>
-            <span style="margin-left:8px">High side</span><span style="width:12px;height:12px;background:var(--high);display:inline-block;border-radius:3px"></span>
-            <span style="margin-left:8px">Meter</span><span style="width:12px;height:12px;background:var(--meter);display:inline-block;border-radius:3px"></span>
+            <span>Low side</span><i style="background:var(--cool)"></i>
+            <span>High side</span><i style="background:var(--hot)"></i>
+            <span>Meter</span><i style="background:var(--meter)"></i>
           </div>
         </div>
 
         <div>
-          <div class="section-title">Evaporator</div>
+          <div class="section-title">Field Readings</div>
           <div class="form-grid">
             <div><label>Suction Pressure (psig)</label><input id="suctionP" type="number" placeholder="118"></div>
             <div><label>Suction Line Temp (°F)</label><input id="suctionT" type="number" placeholder="52"></div>
@@ -140,12 +193,12 @@
       <div class="panel" style="padding:12px">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-size:13px;color:var(--muted)">Primary Likely Fault</div>
-            <div id="primaryFault" style="font-size:18px;font-weight:900;margin-top:4px">—</div>
+            <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800">Primary Likely Fault</div>
+            <div id="primaryFault" style="font-size:20px;font-weight:900;margin-top:4px">—</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:13px;color:var(--muted)">Confidence</div>
-            <div id="confPct" style="font-size:20px;font-weight:900;color:#6ea8ff">—%</div>
+            <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800">Confidence</div>
+            <div id="confPct" style="font-size:22px;font-weight:900;color:#3e8cff">—%</div>
           </div>
         </div>
         <div class="metric-row">
@@ -156,7 +209,7 @@
           <div class="metric"><div class="k">ΔT (RAT−SAT)</div><div class="v" id="deltat">— °F</div></div>
         </div>
         <div style="margin-top:10px">
-          <div style="font-size:13px;color:var(--muted)">Possible Causes (ranked)</div>
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:800">Possible Causes (ranked)</div>
           <div id="causesList" style="margin-top:6px"></div>
         </div>
         <div style="margin-top:10px;font-size:13px;color:var(--muted)"><strong>Recommended Next Steps</strong>
@@ -168,39 +221,32 @@
       <div class="panel" style="padding:12px">
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px">
           <button class="btn secondary" id="exportHist">Export History CSV</button>
-          <button class="btn secondary" id="clearHist" style="background:linear-gradient(90deg,#ff7b7b,#ffb3b3)">Clear</button>
+          <button class="btn secondary" id="clearHist">Clear</button>
         </div>
         <div class="history" id="historyList">No saved readings.</div>
       </div>
-      <div class="debug" id="debugBox">Debug v4: ready • clicks: 0</div>
     </aside>
   </div>
 
-  <footer style="text-align:center;color:var(--muted);font-size:13px;margin-top:12px">Tip: On iPhone, use Safari → Share → Add to Home Screen. On Android, tap the Install button or browser menu. Works offline after first load.</footer>
+  <footer style="text-align:center;color:var(--muted);font-size:12px;margin-top:12px">On iPhone, use Safari → Share → Add to Home Screen. On Android, tap the Install button or browser menu. Works offline after first load.</footer>
 </div>
 
 <script>
 (function(){
-  // Basic helpers
   function $(id){return document.getElementById(id);}
   function toNum(v){ const n=Number(v); return isNaN(n)?null:n; }
   function round1(n){ return n==null?null:Math.round(n*10)/10; }
 
-  // Debug UI
-  const dbg = $('debugBox');
-  let clicks = 0;
-  function setDebug(msg){ if(dbg) dbg.textContent = 'Debug v4: ' + msg + ' • clicks: ' + clicks; }
-
   // Install button logic
   let deferredPrompt;
   const installBtn = $('installBtn');
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block'; setDebug('install prompt ready'); });
-  if (installBtn) installBtn.addEventListener('click', async () => { if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display = 'none'; setDebug('appinstalled via prompt'); });
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; if(installBtn) installBtn.style.display = 'inline-block'; });
+  if (installBtn) installBtn.addEventListener('click', async () => { if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display = 'none'; });
   function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
-  if (isStandalone()) installBtn.style.display = 'none';
-  window.addEventListener('appinstalled', ()=>{ if (installBtn) installBtn.style.display='none'; setDebug('appinstalled event'); });
+  if (isStandalone() && installBtn) installBtn.style.display = 'none';
+  window.addEventListener('appinstalled', ()=>{ if (installBtn) installBtn.style.display='none'; });
 
-  // PT tables
+  // Embedded PT tables (approximate; good for field interpolation)
   const DEFAULT_PT = {
     R410A:[{t:30,p:99},{t:35,p:109},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:156},{t:60,p:170},{t:65,p:185},{t:70,p:201},{t:75,p:218},{t:80,p:236},{t:85,p:277},{t:90,p:299},{t:95,p:321},{t:100,p:344},{t:105,p:368},{t:110,p:393},{t:115,p:418},{t:120,p:444},{t:125,p:471},{t:130,p:499}],
     R32:[{t:30,p:71},{t:35,p:80},{t:40,p:90},{t:45,p:101},{t:50,p:112},{t:55,p:124},{t:60,p:137},{t:65,p:150},{t:70,p:164},{t:75,p:179},{t:80,p:195},{t:85,p:211},{t:90,p:228}],
@@ -283,19 +329,16 @@
     const ns=$('nextSteps'); ns.innerHTML=''; r.steps.forEach(s=>{ const li=document.createElement('li'); li.textContent=s; ns.appendChild(li); });
   }
 
-  // Expose fallback inline handlers
+  // Inline onclick fallbacks (reliable on Pages)
   window._diagClick = function(){
-    clicks++; setDebug('diagnose clicked');
     const d = readInputs();
     if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
     const r = diagnoseAll(d);
     renderResults(r);
   };
   window._saveClick = function(){
-    clicks++; setDebug('save clicked');
     const d = readInputs(); const now=new Date();
     const deltaT=(d.supplyT!=null&&d.returnT!=null)?(d.returnT-d.supplyT):null;
-    // history: store in localStorage
     const key='hvac_hist_v1';
     let a=[]; try{ a = JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){ a=[]; }
     a.unshift({time:now.toLocaleString(), refrig:d.refrig, suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, deltaT});
@@ -304,7 +347,7 @@
     alert('Saved to history.');
   };
 
-  // Hook export/clear (listeners attached on load; not critical if omitted)
+  // Export/Clear
   document.addEventListener('DOMContentLoaded', function(){
     const exportBtn = $('exportHist');
     const clearBtn = $('clearHist');
@@ -315,13 +358,11 @@
       const csv=[cols.join(',')].concat(rows.map(r=>cols.map(c=>r[c]??'').join(','))).join('\n');
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history.csv'; a.click();
     });
-    if (clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.setItem('hvac_hist_v1','[]'); } });
+    if (clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.setItem('hvac_hist_v1','[]'); $('historyList').textContent='No saved readings.'; } });
   });
 
   // Register service worker
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/Hvac-troubleshooter-/service-worker.js').catch(()=>{}); }
-
-  setDebug('ready');
 })();
 </script>
 </body>
