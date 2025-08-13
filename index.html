@@ -276,6 +276,39 @@ function highlight(comp){ ['evap','comp','cond','meter'].forEach(id=>{ const el=
 ['indoorDb','indoorWb','outdoorDb'].forEach(id=>{ document.getElementById(id).addEventListener('focus',()=>highlight('comp')); });
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(()=>{}); }
 renderHist();
+  <script>
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+
+// Show the button when the browser says the app is installable
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();           // stop the automatic mini-infobar
+  deferredPrompt = e;           // stash the event for later
+  installBtn.style.display = 'inline-block';
+});
+
+// On click, trigger the install prompt
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  installBtn.disabled = true;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  // outcome is 'accepted' or 'dismissed'
+  deferredPrompt = null;
+  installBtn.style.display = 'none';
+});
+
+// Hide button if already installed
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+if (isStandalone()) installBtn.style.display = 'none';
+
+// When the app gets installed
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+});
+</script>
 </script>
 </body>
 </html>
