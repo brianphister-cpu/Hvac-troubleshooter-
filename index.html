@@ -310,6 +310,11 @@ if (isStandalone()) installBtn.style.display = 'none';
 window.addEventListener('appinstalled', () => {
   installBtn.style.display = 'none';
 });
+  <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/Hvac-troubleshooter-/service-worker.js');
+}
+</script>
 </script>
 </script>
 </body>
