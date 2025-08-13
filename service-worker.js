@@ -1,6 +1,6 @@
 
 // service-worker.js — cache-first for GitHub Pages subpath
-const CACHE = 'hvac-pro-v1';
+const CACHE = 'hvac-pro-v3';  // bumped to bust old cache
 const ASSETS = [
   '/Hvac-troubleshooter-/',
   '/Hvac-troubleshooter-/index.html',
