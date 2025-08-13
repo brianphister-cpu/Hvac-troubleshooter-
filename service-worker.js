@@ -1,5 +1,5 @@
-// service-worker.js — robust for GitHub Pages subpath (v5.1b)
-const CACHE = 'hvac-pro-v5-1b';
+// service-worker.js — robust for GitHub Pages subpath (v5.2)
+const CACHE = 'hvac-pro-v5-2';
 const ROOT = '/Hvac-troubleshooter-/';
 const CORE = [
   ROOT,
@@ -17,9 +17,7 @@ self.addEventListener('activate', (evt) => {
 });
 self.addEventListener('fetch', (evt) => {
   const url = new URL(evt.request.url);
-  // Only handle our subpath
   if (!url.pathname.startsWith(ROOT)) return;
-  // For navigations, use network-first to avoid stale HTML
   if (evt.request.mode === 'navigate') {
     evt.respondWith(fetch(evt.request).then(resp => {
       const copy = resp.clone();
@@ -28,7 +26,6 @@ self.addEventListener('fetch', (evt) => {
     }).catch(() => caches.match(ROOT + 'index.html', { ignoreSearch: true })));
     return;
   }
-  // For assets, cache-first with ignoreSearch so ?v=... still works
   evt.respondWith(
     caches.match(evt.request, { ignoreSearch: true }).then(cached => cached || fetch(evt.request).then(net => {
       const copy = net.clone();
