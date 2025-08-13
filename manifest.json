@@ -1,19 +1,19 @@
 {
   "name": "HVAC Troubleshooter Pro",
   "short_name": "HVAC Pro",
-  "start_url": "brianphister-cpu/index.html",
-  "scope": "brianphister-cpu/",
+  "start_url": "/Hvac-troubleshooter-/index.html",
+  "scope": "/Hvac-troubleshooter-/",
   "display": "standalone",
   "background_color": "#0b1522",
   "theme_color": "#0b1522",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/Hvac-troubleshooter-/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "/Hvac-troubleshooter-/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
