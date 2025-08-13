@@ -1,8 +1,8 @@
 {
   "name": "HVAC Troubleshooter Pro",
   "short_name": "HVAC Pro",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "brianphister-cpu/index.html",
+  "scope": "brianphister-cpu/",
   "display": "standalone",
   "background_color": "#0b1522",
   "theme_color": "#0b1522",
