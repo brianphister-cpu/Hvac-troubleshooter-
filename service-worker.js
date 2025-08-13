@@ -1,34 +1,13 @@
-// service-worker.js — cache-first PWA for HVAC Troubleshooter Pro
-const CACHE = 'hvac-pro-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
-];
-
-self.addEventListener('install', (evt) => {
-  evt.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (evt) => {
-  evt.waitUntil(self.clients.claim());
-});
-
-self.addEventListener('fetch', (evt) => {
-  if (evt.request.method !== 'GET') return;
-  evt.respondWith(
-    caches.match(evt.request).then(resp => {
-      return resp || fetch(evt.request).then(networkResp => {
-        return caches.open(CACHE).then(cache => {
-          if (evt.request.url.startsWith(self.location.origin)) {
-            cache.put(evt.request, networkResp.clone());
-          }
-          return networkResp;
-        });
-      }).catch(() => caches.match('./index.html'));
-    })
-  );
-});
+{
+  "name": "HVAC Troubleshooter Pro",
+  "short_name": "HVAC Pro",
+  "start_url": "/Hvac-troubleshooter-/index.html",
+  "scope": "/Hvac-troubleshooter-/",
+  "display": "standalone",
+  "background_color": "#0b1522",
+  "theme_color": "#0b1522",
+  "icons": [
+    {"src": "/Hvac-troubleshooter-/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/Hvac-troubleshooter-/icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
