@@ -1,7 +1,7 @@
-// service-worker.js — robust for GitHub Pages subpath (v6)
-const CACHE = 'hvac-pro-v6';
+// service-worker.js — v6.2 final
+const CACHE = 'hvac-pro-v6-2-final';
 const ROOT = '/Hvac-troubleshooter-/';
-const CORE = [ROOT, ROOT+'index.html', ROOT+'manifest.json', ROOT+'icon-192.png', ROOT+'icon-512.png'];
+const CORE = [ROOT, ROOT+'index.html', ROOT+'manifest.json', ROOT+'icon-192.png', ROOT+'icon-512.png', ROOT+'pt/R410A-PT.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
 self.addEventListener('fetch', e => {
