@@ -1,0 +1,28 @@
+{
+  "refrigerants": [
+    {
+      "name": "R410A",
+      "file": "R410A-PT.json",
+      "source": "CSV upload",
+      "units": "F/psig"
+    },
+    {
+      "name": "R22",
+      "file": "R22-PT.json",
+      "source": "CSV upload",
+      "units": "F/psig"
+    },
+    {
+      "name": "R32",
+      "file": "R32-PT.json",
+      "source": "CSV upload",
+      "units": "F/psig"
+    },
+    {
+      "name": "R454B",
+      "file": "R454B-PT.json",
+      "source": "CSV upload",
+      "units": "F/psig"
+    }
+  ]
+}
