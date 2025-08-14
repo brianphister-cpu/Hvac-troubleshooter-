@@ -4,8 +4,8 @@
   "start_url": "/Hvac-troubleshooter-/",
   "scope": "/Hvac-troubleshooter-/",
   "display": "standalone",
-  "background_color": "#eef5fb",
-  "theme_color": "#e4eef8",
+  "background_color": "#f6fafd",
+  "theme_color": "#eaf2fb",
   "icons": [
     {
       "src": "/Hvac-troubleshooter-/icon-192.png",

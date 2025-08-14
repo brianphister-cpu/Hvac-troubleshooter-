@@ -1,5 +1,5 @@
-// service-worker.js — v7
-const CACHE = 'hvac-pro-v7';
+// service-worker.js — v7.1
+const CACHE = 'hvac-pro-v7-1';
 const ROOT = '/Hvac-troubleshooter-/';
 const CORE = [ROOT, ROOT+'index.html', ROOT+'manifest.json', ROOT+'icon-192.png', ROOT+'icon-512.png', ROOT+'pt/R410A-PT.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE))); self.skipWaiting(); });

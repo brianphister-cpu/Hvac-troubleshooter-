@@ -6,42 +6,47 @@
 <title>HVAC Troubleshooter Pro</title>
 <link rel="manifest" href="/Hvac-troubleshooter-/manifest.json">
 <link rel="icon" href="/Hvac-troubleshooter-/icon-192.png">
-<meta name="theme-color" content="#e4eef8" />
+<meta name="theme-color" content="#eaf2fb" />
 <style>
-  :root{ --bg:#eef5fb; --bg2:#f7fbff; --panel:#ffffff; --ink:#0c263b; --muted:#5a748a; --line:#d8e6f3; --accent:#3e8cff; --cool:#2c9fff; --hot:#ff6a3d; --meter:#31c48d; }
+  :root{
+    --bg:#f6fafd; --bg2:#ffffff; --panel:#ffffff; --ink:#0a1e2e; --muted:#5a748a; --line:#dfeaf5;
+    --accent:#2f7bff; --cool:#1d9df5; --hot:#ff6a3d; --meter:#31c48d; --soft:#edf4fb;
+  }
   html,body{margin:0;height:100%;font-family:Inter,system-ui,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--ink)}
   .app{max-width:1200px;margin:18px auto;padding:18px}
   header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .logo{width:56px;height:56px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(62,140,255,0.15)}
+  .logo{width:56px;height:56px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(30,100,200,0.12)}
   .logo img{width:40px;height:40px;border-radius:10px}
   h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.2px}
-  .ver{margin-left:6px;padding:2px 6px;border-radius:8px;background:#eef5fb;border:1px solid var(--line);color:#2b5b7a;font-size:11px;font-weight:800}
+  .ver{margin-left:6px;padding:2px 6px;border-radius:8px;background:#f0f6ff;border:1px solid var(--line);color:#2b5b7a;font-size:11px;font-weight:800}
   #installBtn{display:none;margin-left:auto;padding:10px 14px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(90deg,#7eb5ff,#a8e0ff);color:#0a1c2a;cursor:pointer;box-shadow:0 6px 14px rgba(62,140,255,0.25)}
-  .main{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;margin-top:18px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 8px 22px rgba(10,30,50,0.06)}
+  .main{display:grid;grid-template-columns:1.05fr 0.95fr;gap:18px;margin-top:18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 26px rgba(10,30,50,0.06)}
   .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .form-grid.two-col{grid-template-columns:1fr 1fr}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-  input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fcfdff;color:#0c263b;font-size:15px}
+  input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:#fff;color:#0c263b;font-size:15px}
   input[type=number]{max-width:116px}
   .section-title{font-size:12px;color:var(--muted);margin:6px 0 8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
-  .btn{padding:12px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:800}
+  .btn{padding:12px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800}
   .btn.primary{background:linear-gradient(90deg,#6fabff,#8fd4ff);color:#0a1c2a;box-shadow:0 8px 16px rgba(111,171,255,0.35)}
-  .btn.secondary{background:#eef5fb;color:#0a1c2a;border:1px solid var(--line)}
+  .btn.secondary{background:#f3f8ff;color:#0a1c2a;border:1px solid var(--line)}
   .metric-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
-  .metric{background:#f6fbff;border:1px solid var(--line);padding:10px;border-radius:10px;min-width:120px}
+  .metric{background:var(--soft);border:1px solid var(--line);padding:10px;border-radius:12px;min-width:120px}
   .metric .k{font-size:12px;color:var(--muted)} .metric .v{font-weight:900}
-  .cause{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f6fbff;border:1px solid var(--line);margin-top:8px}
+  .cause{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:#f6fbff;border:1px solid var(--line);margin-top:8px}
   .bar{flex:1;height:10px;background:#e8f2fc;border-radius:6px;overflow:hidden}
   .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--cool),var(--hot))}
   .history{max-height:220px;overflow:auto}
-  .hist{display:flex;justify-content:space-between;align-items:center;background:#f9fcff;border:1px solid var(--line);padding:8px;border-radius:8px;margin-top:6px}
-  .legend{display:flex;gap:10px;color:var(--muted);font-size:12px;align-items:center}
+  .hist{display:flex;justify-content:space-between;align-items:center;background:#f9fcff;border:1px solid var(--line);padding:8px;border-radius:10px;margin-top:6px}
+  .legend{display:flex;gap:10px;color:#56728a;font-size:12px;align-items:center}
   .legend i{display:inline-block;width:14px;height:10px;border-radius:3px}
   .badge{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:8px;font-size:11px;border:1px solid var(--line);color:#2b5b7a}
-  .tips{font-size:13px;color:#2b5b7a;background:#f6fbff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+  .tips{font-size:13px;color:#2b5b7a;background:#f6fbff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
   details summary{cursor:pointer;font-weight:800}
   @media(max-width:980px){.main{grid-template-columns:1fr} input[type=number]{max-width:100%}}
+  /* Square diagram wrapper for mockup look */
+  .cycleWrap{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
 </style>
 </head>
 <body>
@@ -49,13 +54,13 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span class="ver">v7</span> <span id="ptBadge" class="badge">PT Source: —</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.1</span> <span id="ptBadge" class="badge">PT Source: —</span></h1>
       <div style="font-size:12px;color:#5a748a;margin-top:4px">
         <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
         <span id="learnStats" class="badge" title="Learned tolerances">—</span>
       </div>
     </div>
-    <button id="installBtn">Install</button>
+    <button id="installBtn">Install App</button>
   </header>
 
   <div class="main">
@@ -85,38 +90,77 @@
       <hr style="margin:12px 0;border:0;border-top:1px solid var(--line)">
 
       <div class="section-title">Refrigerant Cycle (Interactive)</div>
-      <div class="panel" style="padding:10px">
-        <svg id="cycle" viewBox="0 0 560 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
-          <g id="comp" transform="translate(360,40)" tabindex="0">
+      <div class="cycleWrap">
+        <!-- Square, more realistic positions: top=Compressor, right=Condenser, bottom=Meter, left=Evaporator -->
+        <svg id="cycle" viewBox="0 0 680 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <!-- Evaporator (left) -->
+          <g id="evap" transform="translate(40,120)" tabindex="0">
+            <rect x="0" y="0" width="220" height="180" rx="18" fill="#eaf6ff" stroke="#cfe7fb" stroke-width="2"/>
+            <g stroke="#d8ecff">
+              <line x1="14" y1="16" x2="14" y2="164"/><line x1="34" y1="16" x2="34" y2="164"/><line x1="54" y1="16" x2="54" y2="164"/>
+              <line x1="74" y1="16" x2="74" y2="164"/><line x1="94" y1="16" x2="94" y2="164"/><line x1="114" y1="16" x2="114" y2="164"/>
+              <line x1="134" y1="16" x2="134" y2="164"/><line x1="154" y1="16" x2="154" y2="164"/><line x1="174" y1="16" x2="174" y2="164"/><line x1="194" y1="16" x2="194" y2="164"/>
+            </g>
+            <text x="110" y="192" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Evaporator</text>
+          </g>
+
+          <!-- Compressor (top) -->
+          <g id="comp" transform="translate(270,20)" tabindex="0">
             <rect x="0" y="0" width="140" height="140" rx="24" fill="#fff" stroke="#d5e4f2" stroke-width="2"/>
-            <circle cx="70" cy="70" r="24" fill="#f3f9ff" stroke="#cfe2f1"/>
-            <text x="70" y="76" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Compressor</text>
+            <circle cx="70" cy="70" r="28" fill="#f3f9ff" stroke="#cfe2f1"/>
+            <text x="70" y="158" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Compressor</text>
           </g>
-          <g id="cond" transform="translate(320,320)" tabindex="0">
-            <rect x="0" y="0" width="200" height="140" rx="16" fill="#ffeae4" stroke="#ffd4c8" stroke-width="2"/>
-            <g stroke="#ffdcd2"><line x1="12" y1="12" x2="12" y2="128"/><line x1="24" y1="12" x2="24" y2="128"/><line x1="36" y1="12" x2="36" y2="128"/><line x1="48" y1="12" x2="48" y2="128"/><line x1="60" y1="12" x2="60" y2="128"/><line x1="72" y1="12" x2="72" y2="128"/><line x1="84" y1="12" x2="84" y2="128"/><line x1="96" y1="12" x2="96" y2="128"/><line x1="108" y1="12" x2="108" y2="128"/><line x1="120" y1="12" x2="120" y2="128"/><line x1="132" y1="12" x2="132" y2="128"/><line x1="144" y1="12" x2="144" y2="128"/><line x1="156" y1="12" x2="156" y2="128"/><line x1="168" y1="12" x2="168" y2="128"/></g>
-            <text x="100" y="78" text-anchor="middle" fill="#7a3b2b" font-size="14" font-weight="800">Condenser</text>
+
+          <!-- Condenser (right) -->
+          <g id="cond" transform="translate(420,120)" tabindex="0">
+            <rect x="0" y="0" width="220" height="180" rx="18" fill="#ffeae4" stroke="#ffd4c8" stroke-width="2"/>
+            <g stroke="#ffdcd2">
+              <line x1="18" y1="16" x2="18" y2="164"/><line x1="38" y1="16" x2="38" y2="164"/><line x1="58" y1="16" x2="58" y2="164"/>
+              <line x1="78" y1="16" x2="78" y2="164"/><line x1="98" y1="16" x2="98" y2="164"/><line x1="118" y1="16" x2="118" y2="164"/>
+              <line x1="138" y1="16" x2="138" y2="164"/><line x1="158" y1="16" x2="158" y2="164"/><line x1="178" y1="16" x2="178" y2="164"/><line x1="198" y1="16" x2="198" y2="164"/>
+            </g>
+            <text x="110" y="192" text-anchor="middle" fill="#7a3b2b" font-size="14" font-weight="800">Condenser</text>
           </g>
-          <g id="meter" transform="translate(40,340)" tabindex="0">
-            <rect x="0" y="0" width="160" height="90" rx="12" fill="#f2fff9" stroke="#cfeedd" stroke-width="2"/>
-            <path d="M16 45 L144 45" stroke="#31c48d" stroke-width="4"/>
-            <circle cx="80" cy="45" r="10" fill="none" stroke="#31c48d" stroke-width="4"/>
-            <text x="80" y="78" text-anchor="middle" fill="#2b5b7a" font-size="12" font-weight="800">Meter</text>
+
+          <!-- Meter (bottom) -->
+          <g id="meter" transform="translate(270,360)" tabindex="0">
+            <rect x="0" y="0" width="160" height="100" rx="12" fill="#f2fff9" stroke="#cfeedd" stroke-width="2"/>
+            <path d="M16 50 L144 50" stroke="#31c48d" stroke-width="5"/>
+            <circle cx="80" cy="50" r="12" fill="none" stroke="#31c48d" stroke-width="5"/>
+            <text x="80" y="92" text-anchor="middle" fill="#2b5b7a" font-size="12" font-weight="800">Meter</text>
           </g>
-          <g id="evap" transform="translate(40,40)" tabindex="0">
-            <rect x="0" y="0" width="220" height="140" rx="16" fill="#eaf6ff" stroke="#cfe7fb" stroke-width="2"/>
-            <g stroke="#d8ecff"><line x1="14" y1="12" x2="14" y2="128"/><line x1="28" y1="12" x2="28" y2="128"/><line x1="42" y1="12" x2="42" y2="128"/><line x1="56" y1="12" x2="56" y2="128"/><line x1="70" y1="12" x2="70" y2="128"/><line x1="84" y1="12" x2="84" y2="128"/><line x1="98" y1="12" x2="98" y2="128"/><line x1="112" y1="12" x2="112" y2="128"/><line x1="126" y1="12" x2="126" y2="128"/><line x1="140" y1="12" x2="140" y2="128"/><line x1="154" y1="12" x2="154" y2="128"/><line x1="168" y1="12" x2="168" y2="128"/><line x1="182" y1="12" x2="182" y2="128"/><line x1="196" y1="12" x2="196" y2="128"/></g>
-            <text x="110" y="78" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Evaporator</text>
-          </g>
-          <path d="M360 110 C 320 140, 320 200, 320 320" stroke="var(--hot)" stroke-width="10" fill="none" marker-end="url(#arrowHot)"/>
-          <path d="M320 390 C 260 380, 200 380, 200 385" stroke="var(--hot)" stroke-width="10" fill="none" marker-end="url(#arrowHot)"/>
-          <path d="M200 385 C 160 330, 120 240, 120 180" stroke="var(--cool)" stroke-width="10" fill="none" marker-end="url(#arrowCool)"/>
-          <path d="M260 110 C 320 110, 360 110, 360 110" stroke="var(--cool)" stroke-width="10" fill="none" marker-end="url(#arrowCool)"/>
+
+          <!-- Arrows / piping (square loop, clockwise) -->
+          <!-- Evap (left) -> Compressor (top) : cool suction -->
+          <path d="M260 210 L270 210 L270 90" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
+          <!-- Compressor -> Condenser : hot discharge -->
+          <path d="M410 90 L420 90 L420 210" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
+          <!-- Condenser -> Meter : hot liquid -->
+          <path d="M420 300 L350 300 L350 360" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
+          <!-- Meter -> Evaporator : cool liquid-to-vapor -->
+          <path d="M270 360 L270 300 L260 300 L260 210" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
+
           <defs>
-            <marker id="arrowCool" markerWidth="10" markerHeight="10" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 z" fill="var(--cool)"/></marker>
-            <marker id="arrowHot" markerWidth="10" markerHeight="10" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 z" fill="var(--hot)"/></marker>
+            <marker id="arrowCool" markerWidth="12" markerHeight="12" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L0,8 L8,4 z" fill="var(--cool)"/>
+            </marker>
+            <marker id="arrowHot" markerWidth="12" markerHeight="12" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L0,8 L8,4 z" fill="var(--hot)"/>
+            </marker>
           </defs>
         </svg>
+        <div class="legend" style="margin-top:6px">
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+            <span id="cycleHelp" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#e9f3ff;border:1px solid #d6e7fb;color:#2f7bff;font-weight:900;cursor:pointer" title="Help">?</span>
+          </span>
+        </div>
+        <div id="cycleTip" class="tips" style="display:none">Tap a component to see related tips and which field readings affect it. 
+        <ul style="margin:6px 0 0 16px">
+          <li><strong>Evaporator</strong>: suction pressure → evap sat; suction line temp → superheat; ΔT = RAT−SAT</li>
+          <li><strong>Compressor</strong>: raises pressure/temperature; watch compression ratio</li>
+          <li><strong>Condenser</strong>: liquid pressure & liquid line temp → subcool</li>
+          <li><strong>Meter</strong>: main pressure drop; restrictions here cause high SH & high SC</li>
+        </ul></div>
         <div class="legend" style="margin-top:6px">
           <span>Low side</span><i style="background:var(--cool)"></i>
           <span>High side</span><i style="background:var(--hot)"></i>
@@ -146,7 +190,7 @@
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
         <button class="btn primary" id="diagBtn" onclick="_diagClick()">Diagnose</button>
         <button class="btn secondary" id="saveBtn" onclick="_saveClick()">Save Reading</button>
-        <select id="confirmSelect" style="flex:1;min-width:280px;padding:10px;border-radius:10px;border:1px solid var(--line)">
+        <select id="confirmSelect" style="flex:1;min-width:280px;padding:10px;border-radius:12px;border:1px solid var(--line)">
           <option value="">— Optional: Confirm diagnosis (logs to CSV) —</option>
         </select>
         <button class="btn secondary" id="confirmBtn" onclick="_confirmClick()">Confirm</button>
@@ -163,7 +207,7 @@
           </div>
           <div style="text-align:right">
             <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Confidence</div>
-            <div id="confPct" style="font-size:22px;font-weight:900;color:#3e8cff">—%</div>
+            <div id="confPct" style="font-size:22px;font-weight:900;color:#2f7bff">—%</div>
           </div>
         </div>
         <div class="metric-row">
@@ -202,6 +246,8 @@
   function $(id){return document.getElementById(id);}
   function toNum(v){ const n=Number(v); return isNaN(n)?null:n; }
   function round1(n){ return n==null?null:Math.round(n*10)/10; }
+
+  // Install/PWA
   let deferredPrompt;
   const installBtn = $('installBtn');
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; if(installBtn) installBtn.style.display = 'inline-block'; });
@@ -210,6 +256,7 @@
   if (isStandalone() && installBtn) installBtn.style.display = 'none';
   window.addEventListener('appinstalled', ()=>{ if (installBtn) installBtn.style.display='none'; });
 
+  // PT tables
   const PT_FALLBACK = {
     R410A:[{t:20,p:83},{t:25,p:91},{t:30,p:99},{t:35,p:109},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:156},{t:60,p:170},{t:65,p:185},{t:70,p:201},{t:75,p:218},{t:80,p:236},{t:85,p:256},{t:90,p:277},{t:95,p:299},{t:100,p:321}],
     R32:[{t:30,p:71},{t:35,p:80},{t:40,p:90},{t:45,p:101},{t:50,p:112},{t:55,p:124},{t:60,p:137},{t:65,p:150},{t:70,p:164},{t:75,p:179},{t:80,p:195}],
@@ -228,6 +275,7 @@
     return null;
   }
 
+  // Learning and tolerances
   const BASE_TOL = { sh:2, sc:2, evap:2, dt:3 };
   const TARGETS = { evapSat:40, deltaT:20 };
   const LEARN_KEY = 'hvac_learn_profile_v1';
@@ -241,6 +289,7 @@
     const p=loadLearn(); return { sh: p.shTol || BASE_TOL.sh, sc: p.scTol || BASE_TOL.sc, evap: p.evTol || BASE_TOL.evap, dt: p.dtTol || BASE_TOL.dt };
   }
   function near(val, target, tol){ return val!=null && Math.abs(val-target) <= tol+1e-6; }
+
   function computeConfidence(det, d, TOL){
     let score = 0, max = 0;
     max += 40;
@@ -256,6 +305,7 @@
     if(det.condSat!=null) score += 10;
     return Math.round((score/max)*100);
   }
+
   function classifyNearStates(d, det, TOL){
     const proper = near(det.evapSat, TARGETS.evapSat, TOL.evap) &&
                    near(det.superheat, d.targetSH, TOL.sh) &&
@@ -270,6 +320,7 @@
     if(slightOver ) return 'Slightly overcharged';
     return null;
   }
+
   function diagnoseAll(d){
     const evapSat = pressureToSatTemp(d.refrig, d.suctionP);
     const condSat = pressureToSatTemp(d.refrig, d.liquidP);
@@ -277,13 +328,18 @@
     const subcool  = (d.liquidT!=null && condSat!=null)?  condSat - d.liquidT : null;
     const deltaT   = (d.supplyT!=null && d.returnT!=null)? d.returnT - d.supplyT : null;
     const det = {evapSat:round1(evapSat),condSat:round1(condSat),superheat:superheat==null?null:round1(superheat),subcool:subcool==null?null:round1(subcool),deltaT:deltaT==null?null:round1(deltaT)};
+
     const TOL = getTolerances();
     let causes = {'Undercharge (low refrigerant)':8,'Overcharge (too much refrigerant)':6,'Restriction — metering device / drier':6,'Low airflow across evaporator':6,'Non-condensables (air in system)':4,'Compressor mechanical issue (valves/leak)':4,'Equipment mismatch (ODU>IDU)':4,'TXV overfeeding (adjust superheat)':0};
+
+    // TXV logic: SH low but others OK
     if(d.systemType==='txv' && det.superheat!=null && d.targetSH!=null){
       const shErr = det.superheat - d.targetSH;
       const othersOK = near(det.subcool, d.targetSC, TOL.sc) && near(det.evapSat, TARGETS.evapSat, TOL.evap) && (det.deltaT==null || near(det.deltaT, TARGETS.deltaT, TOL.dt));
       if(shErr < -TOL.sh && othersOK) causes['TXV overfeeding (adjust superheat)'] += 20;
     }
+
+    // Heuristics
     if(det.superheat!=null && d.targetSH!=null){
       const ds = det.superheat - d.targetSH;
       if(ds >= 6){ causes['Undercharge (low refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; }
@@ -307,6 +363,8 @@
       if(det.deltaT!=null && det.deltaT < (TARGETS.deltaT - 3)){ causes['Low airflow across evaporator'] += 18; causes['Equipment mismatch (ODU>IDU)'] += 8; }
       if(!near(det.evapSat, TARGETS.evapSat, TOL.evap)){ causes['Low airflow across evaporator'] += 10; causes['Equipment mismatch (ODU>IDU)'] += 6; }
     }
+
+    // Ranked top 3 + special near states
     let ranked = Object.keys(causes).map(k=>({cause:k,score:causes[k]})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
     const nearState = classifyNearStates(d, det, TOL);
     if(nearState) ranked.unshift({cause:nearState, score:100});
@@ -314,6 +372,7 @@
     ranked = ranked.slice(0,3);
     const conf = computeConfidence(det, d, TOL);
     const primary = ranked[0] ? {cause: ranked[0].cause, pct: conf} : {cause:'Insufficient data', pct:0};
+
     let steps = [];
     if(primary.cause.includes('operating properly')) steps.push('No corrective action required. Continue normal monitoring.');
     if(primary.cause.includes('Slightly undercharged')) steps.push('Add small amount; verify subcool/superheat & ΔT after stabilization.');
@@ -326,8 +385,51 @@
     if(primary.cause.includes('Compressor')) steps.push('Check amp draw; perform valve/leak-down tests; verify compression ratio.');
     if(primary.cause.includes('TXV overfeeding')) steps.push('Adjust TXV superheat per manufacturer; verify after stabilization.');
     if(det.deltaT==null) steps.push('Note: ΔT not provided — verify airflow to refine confidence.');
+
     return {details:det, ranked, primary, steps};
   }
+
+  // Interactive tips
+  function showTips(area, det){
+    const box = $('compTips'); if(!box) return;
+    const map = {
+      comp: ['Suction ~ evap sat', 'Head ~ cond sat', 'Check compression ratio'],
+      cond: ['High-side liquid pressure', 'Liquid line temp → subcool', 'Ambient impact on condensing'],
+      meter: ['Pressure drop point', 'TXV/orifice screens can restrict', 'For TXV, SH mainly at evap outlet'],
+      evap: ['Suction pressure → evap sat', 'Suction line temp → superheat', 'ΔT = RAT − SAT']
+    };
+    const key = area||'evap';
+    const lines = (map[key]||[]).map(s=>'<li>'+s+'</li>').join('');
+    box.innerHTML = `<strong>${key.toUpperCase()}</strong><ul style="margin:6px 0 0 16px">${lines}</ul>` +
+      (det? `<div style="margin-top:6px">EvapSat: ${det.evapSat??'—'}°F · CondSat: ${det.condSat??'—'}°F · SH: ${det.superheat??'—'}°F · SC: ${det.subcool??'—'}°F · ΔT: ${det.deltaT??'—'}°F</div>` : '');
+    box.style.display='block';
+  }
+  ;['comp','cond','meter','evap'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click',()=>showTips(id)); });
+
+  // History & CSV
+  const HIST_KEY='hvac_hist_v7';
+  const CSV_FIELDS = [
+    'time','appVersion','refrig','systemType','indoorDb','indoorWb','outdoorDb','targetSH','targetSC',
+    'suctionP','suctionT','liquidP','liquidT','supplyT','returnT',
+    'evapSat','condSat','superheat','subcool','deltaT',
+    'suggestedDiagnosis','actualDiagnosis','confPct','learningOn'
+  ];
+  function loadHist(){ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []; } }
+  function saveHist(a){ localStorage.setItem(HIST_KEY, JSON.stringify(a)); }
+  function renderHist(){ const list=document.getElementById('historyList'); const a=loadHist(); if(a.length===0){list.textContent='No saved readings.'; return;} list.innerHTML=''; a.forEach((h,i)=>{ const d=document.createElement('div'); d.className='hist';
+    d.innerHTML=`<div><strong>${h.refrig}</strong> · ${h.time}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP}psi ST:${h.suctionT}°F · LP:${h.liquidP}psi LT:${h.liquidT}°F · ΔT:${h.deltaT??'—'}°F · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct}%</span></div>`;
+    const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
+    del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); }; d.appendChild(del); list.appendChild(d); }); }
+
+  function nowStr(){ const d=new Date(); return d.toLocaleString(); }
+
+  window._diagClick = function(){
+    const d = readInputs();
+    if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
+    const r = diagnoseAll(d);
+    renderResults(r);
+    showTips('evap', r.details);
+  };
 
   function readInputs(){ return {
     refrig: $('refrig').value, systemType: $('systemType').value,
@@ -367,53 +469,13 @@
     const sel = $('confirmSelect'); sel.innerHTML='<option value="">— Optional: Confirm diagnosis (logs to CSV) —</option>' + r.ranked.map(a=>`<option>${a.cause}</option>`).join('');
   }
 
-  function showTips(area, det){
-    const box = $('compTips'); if(!box) return;
-    const map = {
-      comp: ['Suction ~ evap sat', 'Head ~ cond sat', 'Check compression ratio'],
-      cond: ['High-side liquid pressure', 'Liquid line temp → subcool', 'Ambient impact on condensing'],
-      meter: ['Pressure drop point', 'TXV/orifice screens can restrict', 'For TXV, SH mainly at evap outlet'],
-      evap: ['Suction pressure → evap sat', 'Suction line temp → superheat', 'ΔT = RAT − SAT']
-    };
-    const key = area||'evap';
-    const lines = (map[key]||[]).map(s=>'<li>'+s+'</li>').join('');
-    box.innerHTML = `<strong>${key.toUpperCase()}</strong><ul style="margin:6px 0 0 16px">${lines}</ul>` +
-      (det? `<div style="margin-top:6px">EvapSat: ${det.evapSat??'—'}°F · CondSat: ${det.condSat??'—'}°F · SH: ${det.superheat??'—'}°F · SC: ${det.subcool??'—'}°F · ΔT: ${det.deltaT??'—'}°F</div>` : '');
-    box.style.display='block';
-  }
-  ;['comp','cond','meter','evap'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click',()=>showTips(id)); });
-
-  const HIST_KEY='hvac_hist_v7';
-  const CSV_FIELDS = [
-    'time','appVersion','refrig','systemType','indoorDb','indoorWb','outdoorDb','targetSH','targetSC',
-    'suctionP','suctionT','liquidP','liquidT','supplyT','returnT',
-    'evapSat','condSat','superheat','subcool','deltaT',
-    'suggestedDiagnosis','actualDiagnosis','confPct','learningOn'
-  ];
-  function loadHist(){ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []; } }
-  function saveHist(a){ localStorage.setItem(HIST_KEY, JSON.stringify(a)); }
-  function renderHist(){ const list=document.getElementById('historyList'); const a=loadHist(); if(a.length===0){list.textContent='No saved readings.'; return;} list.innerHTML=''; a.forEach((h,i)=>{ const d=document.createElement('div'); d.className='hist';
-    d.innerHTML=`<div><strong>${h.refrig}</strong> · ${h.time}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP}psi ST:${h.suctionT}°F · LP:${h.liquidP}psi LT:${h.liquidT}°F · ΔT:${h.deltaT??'—'}°F · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct}%</span></div>`;
-    const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
-    del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); }; d.appendChild(del); list.appendChild(d); }); }
-
-  function nowStr(){ const d=new Date(); return d.toLocaleString(); }
-
-  window._diagClick = function(){
-    const d = readInputs();
-    if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
-    const r = diagnoseAll(d);
-    renderResults(r);
-    showTips('evap', r.details);
-  };
-
   window._saveClick = function(){
     const d = readInputs();
     if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
     const r = diagnoseAll(d);
     const entry = {
       time: nowStr(),
-      appVersion: 'v7',
+      appVersion: 'v7.1',
       refrig: d.refrig, systemType: d.systemType,
       indoorDb: d.indoorDb, indoorWb: d.indoorWb, outdoorDb: d.outdoorDb,
       targetSH: d.targetSH, targetSC: d.targetSC,
@@ -435,12 +497,28 @@
     const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
     const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
     const csv=[CSV_FIELDS.join(',')].concat(rows.map(r=>CSV_FIELDS.map(k=>escape(r[k])).join(','))).join('\n');
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7.csv'; a.click();
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_1.csv'; a.click();
   });
   document.getElementById('clearHist').addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7'); renderHist(); } });
 
+  // Init
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('/Hvac-troubleshooter-/service-worker.js').catch(()=>{}); }
+  function renderHist(){ const list=document.getElementById('historyList'); const a=loadHist(); if(a.length===0){list.textContent='No saved readings.'; return;} list.innerHTML=''; a.forEach((h,i)=>{ const d=document.createElement('div'); d.className='hist';
+    d.innerHTML=`<div><strong>${h.refrig}</strong> · ${h.time}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP}psi ST:${h.suctionT}°F · LP:${h.liquidP}psi LT:${h.liquidT}°F · ΔT:${h.deltaT??'—'}°F · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct}%</span></div>`;
+    const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
+    del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); }; d.appendChild(del); list.appendChild(d); }); }
+  renderHist();
   updateLearnStats();
+
+  // Help tooltip for cycle diagram
+  const help = document.getElementById('cycleHelp');
+  const tip  = document.getElementById('cycleTip');
+  if (help && tip) {
+    const toggle = () => { tip.style.display = (tip.style.display==='none' || tip.style.display==='') ? 'block' : 'none'; };
+    help.addEventListener('click', toggle);
+    help.addEventListener('keypress', (e)=>{ if(e.key==='Enter' || e.key===' ') toggle(); });
+  }
+
 })();
 </script>
 </body>
