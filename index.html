@@ -1,10 +1,9 @@
-
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>HVAC Troubleshooter Pro — v7</title>
+<title>HVAC Troubleshooter Pro</title>
 <link rel="manifest" href="/Hvac-troubleshooter-/manifest.json">
 <link rel="icon" href="/Hvac-troubleshooter-/icon-192.png">
 <meta name="theme-color" content="#e4eef8" />
@@ -17,30 +16,432 @@
   .logo img{width:40px;height:40px;border-radius:10px}
   h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.2px}
   .ver{margin-left:6px;padding:2px 6px;border-radius:8px;background:#eef5fb;border:1px solid var(--line);color:#2b5b7a;font-size:11px;font-weight:800}
+  #installBtn{display:none;margin-left:auto;padding:10px 14px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(90deg,#7eb5ff,#a8e0ff);color:#0a1c2a;cursor:pointer;box-shadow:0 6px 14px rgba(62,140,255,0.25)}
   .main{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;margin-top:18px}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 8px 22px rgba(10,30,50,0.06)}
+  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .form-grid.two-col{grid-template-columns:1fr 1fr}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
   input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fcfdff;color:#0c263b;font-size:15px}
   input[type=number]{max-width:116px}
+  .section-title{font-size:12px;color:var(--muted);margin:6px 0 8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
   .btn{padding:12px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:800}
   .btn.primary{background:linear-gradient(90deg,#6fabff,#8fd4ff);color:#0a1c2a;box-shadow:0 8px 16px rgba(111,171,255,0.35)}
-  .cause{display:flex;gap:10px;align-items:center;background:#f6fbff;border:1px solid var(--line);padding:10px;border-radius:10px;margin-top:8px}
+  .btn.secondary{background:#eef5fb;color:#0a1c2a;border:1px solid var(--line)}
+  .metric-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .metric{background:#f6fbff;border:1px solid var(--line);padding:10px;border-radius:10px;min-width:120px}
+  .metric .k{font-size:12px;color:var(--muted)} .metric .v{font-weight:900}
+  .cause{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f6fbff;border:1px solid var(--line);margin-top:8px}
   .bar{flex:1;height:10px;background:#e8f2fc;border-radius:6px;overflow:hidden}
   .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--cool),var(--hot))}
+  .history{max-height:220px;overflow:auto}
+  .hist{display:flex;justify-content:space-between;align-items:center;background:#f9fcff;border:1px solid var(--line);padding:8px;border-radius:8px;margin-top:6px}
+  .legend{display:flex;gap:10px;color:var(--muted);font-size:12px;align-items:center}
+  .legend i{display:inline-block;width:14px;height:10px;border-radius:3px}
+  .badge{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:8px;font-size:11px;border:1px solid var(--line);color:#2b5b7a}
+  .tips{font-size:13px;color:#2b5b7a;background:#f6fbff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+  details summary{cursor:pointer;font-weight:800}
+  @media(max-width:980px){.main{grid-template-columns:1fr} input[type=number]{max-width:100%}}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
-    <h1>HVAC Troubleshooter — Pro <span class="ver">v7</span></h1>
+    <div>
+      <h1>HVAC Troubleshooter — Pro <span class="ver">v7</span> <span id="ptBadge" class="badge">PT Source: —</span></h1>
+      <div style="font-size:12px;color:#5a748a;margin-top:4px">
+        <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
+        <span id="learnStats" class="badge" title="Learned tolerances">—</span>
+      </div>
+    </div>
+    <button id="installBtn">Install</button>
   </header>
-  <div class="panel">
-    <p>This v7 build includes: interactive diagram, multi-cause diagnoses, adaptive learning, manual confirm logging, and CSV export.</p>
-    <p>Drop this folder into your GitHub Pages repo at <code>/Hvac-troubleshooter-/</code> scope.</p>
+
+  <div class="main">
+    <div class="panel">
+      <div class="section-title">System & Environment</div>
+      <div class="form-grid">
+        <div>
+          <label>Refrigerant</label>
+          <select id="refrig">
+            <option value="R410A">R-410A</option>
+            <option value="R32">R-32</option>
+            <option value="R454B">R-454B</option>
+            <option value="R22">R-22</option>
+          </select>
+        </div>
+        <div>
+          <label>System Type</label>
+          <select id="systemType"><option value="txv">TXV (subcool)</option><option value="fixed">Fixed (superheat)</option></select>
+        </div>
+        <div><label>Indoor DB (°F)</label><input id="indoorDb" type="number" placeholder="75"></div>
+        <div><label>Indoor WB (°F)</label><input id="indoorWb" type="number" placeholder="63"></div>
+        <div><label>Outdoor DB (°F)</label><input id="outdoorDb" type="number" placeholder="95"></div>
+        <div><label>Target Superheat (°F)</label><input id="targetSH" type="number" value="12"></div>
+        <div><label>Target Subcool (°F)</label><input id="targetSC" type="number" value="12"></div>
+      </div>
+
+      <hr style="margin:12px 0;border:0;border-top:1px solid var(--line)">
+
+      <div class="section-title">Refrigerant Cycle (Interactive)</div>
+      <div class="panel" style="padding:10px">
+        <svg id="cycle" viewBox="0 0 560 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <g id="comp" transform="translate(360,40)" tabindex="0">
+            <rect x="0" y="0" width="140" height="140" rx="24" fill="#fff" stroke="#d5e4f2" stroke-width="2"/>
+            <circle cx="70" cy="70" r="24" fill="#f3f9ff" stroke="#cfe2f1"/>
+            <text x="70" y="76" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Compressor</text>
+          </g>
+          <g id="cond" transform="translate(320,320)" tabindex="0">
+            <rect x="0" y="0" width="200" height="140" rx="16" fill="#ffeae4" stroke="#ffd4c8" stroke-width="2"/>
+            <g stroke="#ffdcd2"><line x1="12" y1="12" x2="12" y2="128"/><line x1="24" y1="12" x2="24" y2="128"/><line x1="36" y1="12" x2="36" y2="128"/><line x1="48" y1="12" x2="48" y2="128"/><line x1="60" y1="12" x2="60" y2="128"/><line x1="72" y1="12" x2="72" y2="128"/><line x1="84" y1="12" x2="84" y2="128"/><line x1="96" y1="12" x2="96" y2="128"/><line x1="108" y1="12" x2="108" y2="128"/><line x1="120" y1="12" x2="120" y2="128"/><line x1="132" y1="12" x2="132" y2="128"/><line x1="144" y1="12" x2="144" y2="128"/><line x1="156" y1="12" x2="156" y2="128"/><line x1="168" y1="12" x2="168" y2="128"/></g>
+            <text x="100" y="78" text-anchor="middle" fill="#7a3b2b" font-size="14" font-weight="800">Condenser</text>
+          </g>
+          <g id="meter" transform="translate(40,340)" tabindex="0">
+            <rect x="0" y="0" width="160" height="90" rx="12" fill="#f2fff9" stroke="#cfeedd" stroke-width="2"/>
+            <path d="M16 45 L144 45" stroke="#31c48d" stroke-width="4"/>
+            <circle cx="80" cy="45" r="10" fill="none" stroke="#31c48d" stroke-width="4"/>
+            <text x="80" y="78" text-anchor="middle" fill="#2b5b7a" font-size="12" font-weight="800">Meter</text>
+          </g>
+          <g id="evap" transform="translate(40,40)" tabindex="0">
+            <rect x="0" y="0" width="220" height="140" rx="16" fill="#eaf6ff" stroke="#cfe7fb" stroke-width="2"/>
+            <g stroke="#d8ecff"><line x1="14" y1="12" x2="14" y2="128"/><line x1="28" y1="12" x2="28" y2="128"/><line x1="42" y1="12" x2="42" y2="128"/><line x1="56" y1="12" x2="56" y2="128"/><line x1="70" y1="12" x2="70" y2="128"/><line x1="84" y1="12" x2="84" y2="128"/><line x1="98" y1="12" x2="98" y2="128"/><line x1="112" y1="12" x2="112" y2="128"/><line x1="126" y1="12" x2="126" y2="128"/><line x1="140" y1="12" x2="140" y2="128"/><line x1="154" y1="12" x2="154" y2="128"/><line x1="168" y1="12" x2="168" y2="128"/><line x1="182" y1="12" x2="182" y2="128"/><line x1="196" y1="12" x2="196" y2="128"/></g>
+            <text x="110" y="78" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Evaporator</text>
+          </g>
+          <path d="M360 110 C 320 140, 320 200, 320 320" stroke="var(--hot)" stroke-width="10" fill="none" marker-end="url(#arrowHot)"/>
+          <path d="M320 390 C 260 380, 200 380, 200 385" stroke="var(--hot)" stroke-width="10" fill="none" marker-end="url(#arrowHot)"/>
+          <path d="M200 385 C 160 330, 120 240, 120 180" stroke="var(--cool)" stroke-width="10" fill="none" marker-end="url(#arrowCool)"/>
+          <path d="M260 110 C 320 110, 360 110, 360 110" stroke="var(--cool)" stroke-width="10" fill="none" marker-end="url(#arrowCool)"/>
+          <defs>
+            <marker id="arrowCool" markerWidth="10" markerHeight="10" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 z" fill="var(--cool)"/></marker>
+            <marker id="arrowHot" markerWidth="10" markerHeight="10" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 z" fill="var(--hot)"/></marker>
+          </defs>
+        </svg>
+        <div class="legend" style="margin-top:6px">
+          <span>Low side</span><i style="background:var(--cool)"></i>
+          <span>High side</span><i style="background:var(--hot)"></i>
+          <span>Meter</span><i style="background:var(--meter)"></i>
+        </div>
+        <div id="compTips" class="tips" style="display:none"></div>
+      </div>
+
+      <div class="section-title">Field Readings</div>
+      <div class="form-grid">
+        <div><label>Suction Pressure (psig)</label><input id="suctionP" type="number" placeholder="118"></div>
+        <div><label>Suction Line Temp (°F)</label><input id="suctionT" type="number" placeholder="52"></div>
+      </div>
+
+      <div class="section-title">Condenser</div>
+      <div class="form-grid two-col">
+        <div><label>Liquid Pressure (psig)</label><input id="liquidP" type="number" placeholder="380"></div>
+        <div><label>Liquid Line Temp (°F)</label><input id="liquidT" type="number" placeholder="95"></div>
+      </div>
+
+      <div class="section-title">Optional — Air Temps</div>
+      <div class="form-grid">
+        <div><label>Supply Air Temp (°F) — SAT</label><input id="supplyT" type="number" placeholder="optional"></div>
+        <div><label>Return Air Temp (°F) — RAT</label><input id="returnT" type="number" placeholder="optional"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn primary" id="diagBtn" onclick="_diagClick()">Diagnose</button>
+        <button class="btn secondary" id="saveBtn" onclick="_saveClick()">Save Reading</button>
+        <select id="confirmSelect" style="flex:1;min-width:280px;padding:10px;border-radius:10px;border:1px solid var(--line)">
+          <option value="">— Optional: Confirm diagnosis (logs to CSV) —</option>
+        </select>
+        <button class="btn secondary" id="confirmBtn" onclick="_confirmClick()">Confirm</button>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="section-title">Diagnosis</div>
+      <div class="panel" style="padding:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Primary Likely Fault</div>
+            <div id="primaryFault" style="font-size:20px;font-weight:900;margin-top:4px">—</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Confidence</div>
+            <div id="confPct" style="font-size:22px;font-weight:900;color:#3e8cff">—%</div>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div class="metric"><div class="k">Evap Sat</div><div class="v" id="evapSat">— °F</div></div>
+          <div class="metric"><div class="k">Cond Sat</div><div class="v" id="condSat">— °F</div></div>
+          <div class="metric"><div class="k">Superheat</div><div class="v" id="superheat">— °F</div></div>
+          <div class="metric"><div class="k">Subcool</div><div class="v" id="subcool">— °F</div></div>
+          <div class="metric"><div class="k">ΔT (RAT−SAT)</div><div class="v" id="deltat">— °F</div></div>
+        </div>
+        <div id="notes" style="margin-top:8px;color:#5a748a;font-size:13px"></div>
+        <div style="margin-top:10px">
+          <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Top Causes</div>
+          <div id="causesList" style="margin-top:6px"></div>
+        </div>
+        <div style="margin-top:10px;font-size:13px;color:#5a748a"><strong>Recommended Next Steps</strong>
+          <ul id="nextSteps" style="margin-top:6px"></ul>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:10px">History</div>
+      <div class="panel" style="padding:12px">
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px">
+          <button class="btn secondary" id="exportHist">Export History CSV</button>
+          <button class="btn secondary" id="clearHist">Clear</button>
+        </div>
+        <div class="history" id="historyList">No saved readings.</div>
+      </div>
+    </aside>
   </div>
+
+  <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install or browser menu. Works offline after first load.</footer>
 </div>
+
 <script>
-// Minimal boot; the full v7 logic will replace this index in your repo if you used the previous detailed package.
+(function(){
+  function $(id){return document.getElementById(id);}
+  function toNum(v){ const n=Number(v); return isNaN(n)?null:n; }
+  function round1(n){ return n==null?null:Math.round(n*10)/10; }
+  let deferredPrompt;
+  const installBtn = $('installBtn');
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; if(installBtn) installBtn.style.display = 'inline-block'; });
+  if (installBtn) installBtn.addEventListener('click', async () => { if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display = 'none'; });
+  function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+  if (isStandalone() && installBtn) installBtn.style.display = 'none';
+  window.addEventListener('appinstalled', ()=>{ if (installBtn) installBtn.style.display='none'; });
+
+  const PT_FALLBACK = {
+    R410A:[{t:20,p:83},{t:25,p:91},{t:30,p:99},{t:35,p:109},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:156},{t:60,p:170},{t:65,p:185},{t:70,p:201},{t:75,p:218},{t:80,p:236},{t:85,p:256},{t:90,p:277},{t:95,p:299},{t:100,p:321}],
+    R32:[{t:30,p:71},{t:35,p:80},{t:40,p:90},{t:45,p:101},{t:50,p:112},{t:55,p:124},{t:60,p:137},{t:65,p:150},{t:70,p:164},{t:75,p:179},{t:80,p:195}],
+    R454B:[{t:30,p:82},{t:35,p:91},{t:40,p:100},{t:45,p:110},{t:50,p:121},{t:55,p:132},{t:60,p:144},{t:65,p:156},{t:70,p:169},{t:75,p:182},{t:80,p:196}],
+    R22:[{t:30,p:78},{t:35,p:89},{t:40,p:102},{t:45,p:115},{t:50,p:129},{t:55,p:145},{t:60,p:161},{t:65,p:179},{t:70,p:198},{t:75,p:219}]
+  };
+  const PT = {R32:PT_FALLBACK.R32, R454B:PT_FALLBACK.R454B, R22:PT_FALLBACK.R22};
+  let ptSource={R410A:'Approx'};
+  async function loadR410A(){ try{ const res=await fetch('/Hvac-troubleshooter-/pt/R410A-PT.json', {cache:'reload'}); if(!res.ok) throw 0; const data=await res.json(); if(Array.isArray(data.table)){PT.R410A=data.table; ptSource.R410A='Exact';} else {PT.R410A=PT_FALLBACK.R410A;} }catch(e){ PT.R410A=PT_FALLBACK.R410A; ptSource.R410A='Approx'; } finally { const b=$('ptBadge'); if(b) b.textContent='PT Source: '+(ptSource.R410A||'—'); } }
+  loadR410A();
+
+  function pressureToSatTemp(ref, psig){
+    const table = PT[ref] || PT_FALLBACK[ref]; if(!table || psig==null) return null;
+    if(psig <= table[0].p) return table[0].t; if(psig >= table[table.length-1].p) return table[table.length-1].t;
+    for(let i=0;i<table.length-1;i++){ const a=table[i], b=table[i+1]; if(psig >= a.p && psig <= b.p){ const f=(psig-a.p)/(b.p-a.p); return a.t + f*(b.t-a.t); } }
+    return null;
+  }
+
+  const BASE_TOL = { sh:2, sc:2, evap:2, dt:3 };
+  const TARGETS = { evapSat:40, deltaT:20 };
+  const LEARN_KEY = 'hvac_learn_profile_v1';
+  function loadLearn(){ try{return JSON.parse(localStorage.getItem(LEARN_KEY)||'{}');}catch(e){return {}; } }
+  function saveLearn(p){ localStorage.setItem(LEARN_KEY, JSON.stringify(p)); }
+  function updateLearnStats(){ const p=loadLearn(); const lbl = $('learnStats'); if(!lbl) return;
+    if(!p.count) { lbl.textContent = 'Learning: 0 cases'; return; }
+    lbl.textContent = `Learning: ${p.count} cases · SH±${p.shTol||2} SC±${p.scTol||2} ΔT±${p.dtTol||3} Evap±${p.evTol||2}`;
+  }
+  function getTolerances(){ const useLearn = $('learningToggle').checked; if(!useLearn) return BASE_TOL;
+    const p=loadLearn(); return { sh: p.shTol || BASE_TOL.sh, sc: p.scTol || BASE_TOL.sc, evap: p.evTol || BASE_TOL.evap, dt: p.dtTol || BASE_TOL.dt };
+  }
+  function near(val, target, tol){ return val!=null && Math.abs(val-target) <= tol+1e-6; }
+  function computeConfidence(det, d, TOL){
+    let score = 0, max = 0;
+    max += 40;
+    let shPart=0, scPart=0;
+    if(det.superheat!=null && d.targetSH!=null) shPart = Math.max(0, 20*(1 - Math.min(Math.abs(det.superheat-d.targetSH)/(TOL.sh*2),1)));
+    if(det.subcool!=null  && d.targetSC!=null) scPart = Math.max(0, 20*(1 - Math.min(Math.abs(det.subcool -d.targetSC)/(TOL.sc*2),1)));
+    score += shPart + scPart;
+    max += 30;
+    if(det.deltaT!=null) score += Math.max(0, 30*(1 - Math.min(Math.abs(det.deltaT-TARGETS.deltaT)/(TOL.dt*2),1)));
+    else score += 18;
+    max += 30;
+    if(det.evapSat!=null) score += Math.max(0, 20*(1 - Math.min(Math.abs(det.evapSat-TARGETS.evapSat)/(TOL.evap*2),1)));
+    if(det.condSat!=null) score += 10;
+    return Math.round((score/max)*100);
+  }
+  function classifyNearStates(d, det, TOL){
+    const proper = near(det.evapSat, TARGETS.evapSat, TOL.evap) &&
+                   near(det.superheat, d.targetSH, TOL.sh) &&
+                   near(det.subcool,  d.targetSC, TOL.sc) &&
+                   (det.deltaT==null || near(det.deltaT, TARGETS.deltaT, TOL.dt));
+    if(proper) return 'System operating properly';
+    const shErr = (det.superheat!=null && d.targetSH!=null) ? det.superheat - d.targetSH : null;
+    const scErr = (det.subcool !=null && d.targetSC!=null) ? det.subcool  - d.targetSC : null;
+    const slightUnder = ( (shErr!=null && shErr >=  TOL.sh && shErr <= 5) || (scErr!=null && scErr <= -TOL.sc && scErr >= -5) );
+    const slightOver  = ( (shErr!=null && shErr <= -TOL.sh && shErr >= -5) || (scErr!=null && scErr >=  TOL.sc && scErr <= 5) );
+    if(slightUnder) return 'Slightly undercharged';
+    if(slightOver ) return 'Slightly overcharged';
+    return null;
+  }
+  function diagnoseAll(d){
+    const evapSat = pressureToSatTemp(d.refrig, d.suctionP);
+    const condSat = pressureToSatTemp(d.refrig, d.liquidP);
+    const superheat = (d.suctionT!=null && evapSat!=null)? d.suctionT - evapSat : null;
+    const subcool  = (d.liquidT!=null && condSat!=null)?  condSat - d.liquidT : null;
+    const deltaT   = (d.supplyT!=null && d.returnT!=null)? d.returnT - d.supplyT : null;
+    const det = {evapSat:round1(evapSat),condSat:round1(condSat),superheat:superheat==null?null:round1(superheat),subcool:subcool==null?null:round1(subcool),deltaT:deltaT==null?null:round1(deltaT)};
+    const TOL = getTolerances();
+    let causes = {'Undercharge (low refrigerant)':8,'Overcharge (too much refrigerant)':6,'Restriction — metering device / drier':6,'Low airflow across evaporator':6,'Non-condensables (air in system)':4,'Compressor mechanical issue (valves/leak)':4,'Equipment mismatch (ODU>IDU)':4,'TXV overfeeding (adjust superheat)':0};
+    if(d.systemType==='txv' && det.superheat!=null && d.targetSH!=null){
+      const shErr = det.superheat - d.targetSH;
+      const othersOK = near(det.subcool, d.targetSC, TOL.sc) && near(det.evapSat, TARGETS.evapSat, TOL.evap) && (det.deltaT==null || near(det.deltaT, TARGETS.deltaT, TOL.dt));
+      if(shErr < -TOL.sh && othersOK) causes['TXV overfeeding (adjust superheat)'] += 20;
+    }
+    if(det.superheat!=null && d.targetSH!=null){
+      const ds = det.superheat - d.targetSH;
+      if(ds >= 6){ causes['Undercharge (low refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; }
+      else if(ds <= -6){ causes['Overcharge (too much refrigerant)'] += 12; causes['Restriction — metering device / drier'] += 4; }
+    }
+    if(det.subcool!=null && d.targetSC!=null){
+      const dc = det.subcool - d.targetSC;
+      if(dc >= 6){ causes['Overcharge (too much refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; }
+      else if(dc <= -4){ causes['Undercharge (low refrigerant)'] += 12; }
+    }
+    if(d.suctionP!=null && d.liquidP!=null){
+      if(d.suctionP < 105 && d.liquidP < 320) causes['Undercharge (low refrigerant)'] += 12;
+      if(d.suctionP < 105 && d.liquidP > 380){ causes['Low airflow across evaporator'] += 10; causes['Non-condensables (air in system)'] += 8; }
+      if(d.suctionP > 160 && d.liquidP < 330) causes['Compressor mechanical issue (valves/leak)'] += 16;
+      if(d.suctionP > 160 && d.liquidP > 480){ causes['Overcharge (too much refrigerant)'] += 10; causes['Non-condensables (air in system)'] += 8; }
+    }
+    if(det.deltaT!=null){ if(det.deltaT < 12) causes['Low airflow across evaporator'] += 18; else if(det.deltaT > 28) causes['Low airflow across evaporator'] += 8; }
+    const shOK = det.superheat!=null && d.targetSH!=null && Math.abs(det.superheat-d.targetSH) <= TOL.sh;
+    const scOK = det.subcool !=null && d.targetSC!=null && Math.abs(det.subcool -d.targetSC) <= TOL.sc;
+    if(shOK && scOK){
+      if(det.deltaT!=null && det.deltaT < (TARGETS.deltaT - 3)){ causes['Low airflow across evaporator'] += 18; causes['Equipment mismatch (ODU>IDU)'] += 8; }
+      if(!near(det.evapSat, TARGETS.evapSat, TOL.evap)){ causes['Low airflow across evaporator'] += 10; causes['Equipment mismatch (ODU>IDU)'] += 6; }
+    }
+    let ranked = Object.keys(causes).map(k=>({cause:k,score:causes[k]})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+    const nearState = classifyNearStates(d, det, TOL);
+    if(nearState) ranked.unshift({cause:nearState, score:100});
+    const total = ranked.reduce((s,i)=>s+i.score,0)||1; ranked.forEach(a=>a.pct=Math.round((a.score/total)*100));
+    ranked = ranked.slice(0,3);
+    const conf = computeConfidence(det, d, TOL);
+    const primary = ranked[0] ? {cause: ranked[0].cause, pct: conf} : {cause:'Insufficient data', pct:0};
+    let steps = [];
+    if(primary.cause.includes('operating properly')) steps.push('No corrective action required. Continue normal monitoring.');
+    if(primary.cause.includes('Slightly undercharged')) steps.push('Add small amount; verify subcool/superheat & ΔT after stabilization.');
+    if(primary.cause.includes('Slightly overcharged')) steps.push('Recover a small amount; recheck SC/SH and ΔT.');
+    if(primary.cause.includes('Undercharge')) steps.push('Leak check; charge to spec using targets.');
+    if(primary.cause.includes('Overcharge')) steps.push('Recover to target subcool; verify airflow then recheck.');
+    if(primary.cause.includes('Restriction')) steps.push('Inspect/replace drier; check TXV/orifice screens.');
+    if(primary.cause.includes('Low airflow')) steps.push('Check filter, blower amps, coil cleanliness, duct restrictions; measure CFM if available.');
+    if(primary.cause.includes('Non-condensables')) steps.push('Recover & deep vacuum; recharge by weight.');
+    if(primary.cause.includes('Compressor')) steps.push('Check amp draw; perform valve/leak-down tests; verify compression ratio.');
+    if(primary.cause.includes('TXV overfeeding')) steps.push('Adjust TXV superheat per manufacturer; verify after stabilization.');
+    if(det.deltaT==null) steps.push('Note: ΔT not provided — verify airflow to refine confidence.');
+    return {details:det, ranked, primary, steps};
+  }
+
+  function readInputs(){ return {
+    refrig: $('refrig').value, systemType: $('systemType').value,
+    indoorDb: toNum($('indoorDb').value), indoorWb: toNum($('indoorWb').value), outdoorDb: toNum($('outdoorDb').value),
+    targetSH: toNum($('targetSH').value) ?? 12, targetSC: toNum($('targetSC').value) ?? 12,
+    suctionP: toNum($('suctionP').value), suctionT: toNum($('suctionT').value),
+    liquidP: toNum($('liquidP').value), liquidT: toNum($('liquidT').value),
+    supplyT: toNum($('supplyT').value), returnT: toNum($('returnT').value)
+  }; }
+
+  function renderResults(r){
+    $('primaryFault').textContent = r.primary.cause; $('confPct').textContent = (r.primary.pct||0)+'%';
+    $('evapSat').textContent = r.details.evapSat==null?'—':r.details.evapSat+' °F';
+    $('condSat').textContent = r.details.condSat==null?'—':r.details.condSat+' °F';
+    $('superheat').textContent = r.details.superheat==null?'—':r.details.superheat+' °F';
+    $('subcool').textContent = r.details.subcool==null?'—':r.details.subcool+' °F';
+    $('deltat').textContent = r.details.deltaT==null?'—':r.details.deltaT+' °F';
+    const list=$('causesList'); list.innerHTML='';
+    r.ranked.forEach(it=>{ const row=document.createElement('div'); row.className='cause';
+      const why = document.createElement('details');
+      why.innerHTML = `<summary>${it.cause} — ${it.pct}%</summary><div style="padding:6px 0 0 4px;font-size:13px;color:#2b5b7a">`+
+        (it.cause.includes('Undercharge')? 'High SH and low SC; both pressures depressed.' :
+        it.cause.includes('Overcharge')? 'Low SH and high SC; elevated head pressure.' :
+        it.cause.includes('Low airflow')? 'Low ΔT or evapSat off with SH/SC near target.' :
+        it.cause.includes('TXV')? 'TXV system with low SH while other signals look good.' :
+        it.cause.includes('Restriction')? 'High SC with high SH; pressure drop across liquid line.' :
+        it.cause.includes('Non-condensables')? 'High head with normal/low suction; erratic pressures.' :
+        it.cause.includes('Compressor')? 'High suction with low head; poor compression ratio.' :
+        it.cause.includes('mismatch')? 'SH/SC good but evapSat/ΔT off; equipment pairing suspect.' :
+        'Cross-check readings and ambient conditions.') + `</div>`;
+      row.appendChild(why);
+      const bar=document.createElement('div'); bar.className='bar'; bar.innerHTML=`<i style="width:${Math.max(6, it.pct)}%"></i>`;
+      row.appendChild(bar);
+      list.appendChild(row);
+    });
+    const ns=$('nextSteps'); ns.innerHTML=''; r.steps.forEach(s=>{ const li=document.createElement('li'); li.textContent=s; ns.appendChild(li); });
+    const sel = $('confirmSelect'); sel.innerHTML='<option value="">— Optional: Confirm diagnosis (logs to CSV) —</option>' + r.ranked.map(a=>`<option>${a.cause}</option>`).join('');
+  }
+
+  function showTips(area, det){
+    const box = $('compTips'); if(!box) return;
+    const map = {
+      comp: ['Suction ~ evap sat', 'Head ~ cond sat', 'Check compression ratio'],
+      cond: ['High-side liquid pressure', 'Liquid line temp → subcool', 'Ambient impact on condensing'],
+      meter: ['Pressure drop point', 'TXV/orifice screens can restrict', 'For TXV, SH mainly at evap outlet'],
+      evap: ['Suction pressure → evap sat', 'Suction line temp → superheat', 'ΔT = RAT − SAT']
+    };
+    const key = area||'evap';
+    const lines = (map[key]||[]).map(s=>'<li>'+s+'</li>').join('');
+    box.innerHTML = `<strong>${key.toUpperCase()}</strong><ul style="margin:6px 0 0 16px">${lines}</ul>` +
+      (det? `<div style="margin-top:6px">EvapSat: ${det.evapSat??'—'}°F · CondSat: ${det.condSat??'—'}°F · SH: ${det.superheat??'—'}°F · SC: ${det.subcool??'—'}°F · ΔT: ${det.deltaT??'—'}°F</div>` : '');
+    box.style.display='block';
+  }
+  ;['comp','cond','meter','evap'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('click',()=>showTips(id)); });
+
+  const HIST_KEY='hvac_hist_v7';
+  const CSV_FIELDS = [
+    'time','appVersion','refrig','systemType','indoorDb','indoorWb','outdoorDb','targetSH','targetSC',
+    'suctionP','suctionT','liquidP','liquidT','supplyT','returnT',
+    'evapSat','condSat','superheat','subcool','deltaT',
+    'suggestedDiagnosis','actualDiagnosis','confPct','learningOn'
+  ];
+  function loadHist(){ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []; } }
+  function saveHist(a){ localStorage.setItem(HIST_KEY, JSON.stringify(a)); }
+  function renderHist(){ const list=document.getElementById('historyList'); const a=loadHist(); if(a.length===0){list.textContent='No saved readings.'; return;} list.innerHTML=''; a.forEach((h,i)=>{ const d=document.createElement('div'); d.className='hist';
+    d.innerHTML=`<div><strong>${h.refrig}</strong> · ${h.time}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP}psi ST:${h.suctionT}°F · LP:${h.liquidP}psi LT:${h.liquidT}°F · ΔT:${h.deltaT??'—'}°F · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct}%</span></div>`;
+    const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
+    del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); }; d.appendChild(del); list.appendChild(d); }); }
+
+  function nowStr(){ const d=new Date(); return d.toLocaleString(); }
+
+  window._diagClick = function(){
+    const d = readInputs();
+    if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
+    const r = diagnoseAll(d);
+    renderResults(r);
+    showTips('evap', r.details);
+  };
+
+  window._saveClick = function(){
+    const d = readInputs();
+    if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
+    const r = diagnoseAll(d);
+    const entry = {
+      time: nowStr(),
+      appVersion: 'v7',
+      refrig: d.refrig, systemType: d.systemType,
+      indoorDb: d.indoorDb, indoorWb: d.indoorWb, outdoorDb: d.outdoorDb,
+      targetSH: d.targetSH, targetSC: d.targetSC,
+      suctionP: d.suctionP, suctionT: d.suctionT, liquidP: d.liquidP, liquidT: d.liquidT,
+      supplyT: d.supplyT, returnT: d.returnT,
+      evapSat: r.details.evapSat, condSat: r.details.condSat, superheat: r.details.superheat, subcool: r.details.subcool, deltaT: r.details.deltaT,
+      suggestedDiagnosis: r.primary.cause, actualDiagnosis: '', confPct: r.primary.pct, learningOn: $('learningToggle').checked
+    };
+    const a = loadHist(); a.unshift(entry); if(a.length>500) a.pop(); saveHist(a); renderHist(); alert('Saved to history.');
+  };
+
+  window._confirmClick = function(){
+    const sel=$('confirmSelect'); const choice = sel.value; if(!choice){ alert('Pick a diagnosis from the list first.'); return; }
+    const a=loadHist(); if(a.length===0){ alert('Save a reading first, then confirm.'); return; }
+    a[0].actualDiagnosis = choice; saveHist(a); renderHist(); alert('Logged your confirmation.');
+  };
+
+  document.getElementById('exportHist').addEventListener('click', ()=>{
+    const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
+    const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+    const csv=[CSV_FIELDS.join(',')].concat(rows.map(r=>CSV_FIELDS.map(k=>escape(r[k])).join(','))).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7.csv'; a.click();
+  });
+  document.getElementById('clearHist').addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7'); renderHist(); } });
+
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('/Hvac-troubleshooter-/service-worker.js').catch(()=>{}); }
+  updateLearnStats();
+})();
 </script>
 </body>
 </html>
