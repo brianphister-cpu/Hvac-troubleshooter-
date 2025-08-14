@@ -54,7 +54,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.1</span> <span id="ptBadge" class="badge">PT Source: —</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.1b</span> <span id="ptBadge" class="badge">PT Source: —</span></h1>
       <div style="font-size:12px;color:#5a748a;margin-top:4px">
         <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
         <span id="learnStats" class="badge" title="Learned tolerances">—</span>
@@ -132,13 +132,13 @@
 
           <!-- Arrows / piping (square loop, clockwise) -->
           <!-- Evap (left) -> Compressor (top) : cool suction -->
-          <path d="M260 210 L270 210 L270 90" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
+          <path id="p_ev_to_comp" d="M260 210 L270 210 L270 90" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
           <!-- Compressor -> Condenser : hot discharge -->
-          <path d="M410 90 L420 90 L420 210" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
+          <path id="p_comp_to_cond" d="M410 90 L420 90 L420 210" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
           <!-- Condenser -> Meter : hot liquid -->
-          <path d="M420 300 L350 300 L350 360" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
+          <path id="p_cond_to_meter" d="M420 300 L350 300 L350 360" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
           <!-- Meter -> Evaporator : cool liquid-to-vapor -->
-          <path d="M270 360 L270 300 L260 300 L260 210" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
+          <path id="p_meter_to_evap" d="M270 360 L270 300 L260 300 L260 210" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
 
           <defs>
             <marker id="arrowCool" markerWidth="12" markerHeight="12" refX="6" refY="4" orient="auto">
@@ -440,6 +440,48 @@
     supplyT: toNum($('supplyT').value), returnT: toNum($('returnT').value)
   }; }
 
+  
+  // Dynamic pipe coloring (hot/cool intensity based on diagnostics)
+  function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+  function blendHot(intensity){
+    // 0 => #ff9d80 (light hot), 1 => #d02f00 (deep red)
+    const r = Math.round(0xff*(1-intensity) + 0xd0*intensity);
+    const g = Math.round(0x9d*(1-intensity) + 0x2f*intensity);
+    const b = Math.round(0x80*(1-intensity) + 0x00*intensity);
+    return `rgb(${r},${g},${b})`;
+  }
+  function blendCool(intensity){
+    // 0 => #a6dbff (light cool), 1 => #0459a8 (deep blue)
+    const r = Math.round(0xa6*(1-intensity) + 0x04*intensity);
+    const g = Math.round(0xdb*(1-intensity) + 0x59*intensity);
+    const b = Math.round(0xff*(1-intensity) + 0xa8*intensity);
+    return `rgb(${r},${g},${b})`;
+  }
+  function updatePipeColors(det, input){
+    // Hot side intensity grows with condensing temp and subcool amount
+    let hotI = 0;
+    if (det.condSat!=null) hotI += clamp01((det.condSat - 95) / 35);   // condSat ~95–130F
+    if (det.subcool!=null) hotI += clamp01(det.subcool / 20);          // SC up to ~20F
+    hotI = clamp01(hotI/2);
+    // Cool side intensity grows as evap is lower and superheat is present (but not extreme)
+    let coolI = 0;
+    if (det.evapSat!=null) coolI += clamp01((45 - det.evapSat) / 15);  // 30–45F
+    if (det.superheat!=null) coolI += clamp01(det.superheat / 25);     // up to ~25F reasonable
+    coolI = clamp01(coolI/2);
+
+    const hotColor  = blendHot(hotI);
+    const coolColor = blendCool(coolI);
+
+    const p1 = document.getElementById('p_comp_to_cond');
+    const p2 = document.getElementById('p_cond_to_meter');
+    const p3 = document.getElementById('p_ev_to_comp');
+    const p4 = document.getElementById('p_meter_to_evap');
+    if (p1) { p1.style.stroke = hotColor;  p1.style.strokeWidth = '12px'; p1.style.filter = 'none'; }
+    if (p2) { p2.style.stroke = hotColor;  p2.style.strokeWidth = '12px'; p2.style.filter = 'none'; }
+    if (p3) { p3.style.stroke = coolColor; p3.style.strokeWidth = '12px'; p3.style.filter = 'none'; }
+    if (p4) { p4.style.stroke = coolColor; p4.style.strokeWidth = '12px'; p4.style.filter = 'none'; }
+  }
+
   function renderResults(r){
     $('primaryFault').textContent = r.primary.cause; $('confPct').textContent = (r.primary.pct||0)+'%';
     $('evapSat').textContent = r.details.evapSat==null?'—':r.details.evapSat+' °F';
@@ -448,6 +490,7 @@
     $('subcool').textContent = r.details.subcool==null?'—':r.details.subcool+' °F';
     $('deltat').textContent = r.details.deltaT==null?'—':r.details.deltaT+' °F';
     const list=$('causesList'); list.innerHTML='';
+    updatePipeColors(r.details, {});
     r.ranked.forEach(it=>{ const row=document.createElement('div'); row.className='cause';
       const why = document.createElement('details');
       why.innerHTML = `<summary>${it.cause} — ${it.pct}%</summary><div style="padding:6px 0 0 4px;font-size:13px;color:#2b5b7a">`+
@@ -497,7 +540,7 @@
     const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
     const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
     const csv=[CSV_FIELDS.join(',')].concat(rows.map(r=>CSV_FIELDS.map(k=>escape(r[k])).join(','))).join('\n');
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_1.csv'; a.click();
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_1b.csv'; a.click();
   });
   document.getElementById('clearHist').addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7'); renderHist(); } });
 
