@@ -1,5 +1,5 @@
 // service-worker.js — v7.2.0
-const CACHE = 'hvac-pro-v7.2.0';
+const CACHE = 'hvac-pro-v7.2.1-lite';
 const ROOT = '/Hvac-troubleshooter-/';
 const CORE = [ROOT, ROOT+'index.html', ROOT+'manifest.json', ROOT+'icon-192.png', ROOT+'icon-512.png', ROOT+'pt/index.json'];
 self.addEventListener('install', (e) => {

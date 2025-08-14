@@ -53,7 +53,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.2</span> <span id="ptBadge" class="badge">PT: —</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.2a-lite</span> <span id="ptBadge" class="badge">PT: —</span></h1>
       <div style="font-size:12px;color:#5a748a;margin-top:4px">
         <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
         <span id="learnStats" class="badge" title="Learned tolerances">—</span>
@@ -85,70 +85,32 @@
 
       <div class="section-title">Refrigerant Cycle (Interactive)</div>
       <div class="cycleWrap">
-        <svg id="cycle" viewBox="0 0 680 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
-          <!-- Evaporator (left) -->
-          <g id="evap" transform="translate(40,120)" tabindex="0">
-            <rect x="0" y="0" width="220" height="180" rx="18" fill="#eaf6ff" stroke="#cfe7fb" stroke-width="2"/>
-            <g stroke="#d8ecff">
-              <line x1="14" y1="16" x2="14" y2="164"/><line x1="34" y1="16" x2="34" y2="164"/><line x1="54" y1="16" x2="54" y2="164"/>
-              <line x1="74" y1="16" x2="74" y2="164"/><line x1="94" y1="16" x2="94" y2="164"/><line x1="114" y1="16" x2="114" y2="164"/>
-              <line x1="134" y1="16" x2="134" y2="164"/><line x1="154" y1="16" x2="154" y2="164"/><line x1="174" y1="16" x2="174" y2="164"/><line x1="194" y1="16" x2="194" y2="164"/>
-            </g>
-            <text x="110" y="192" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Evaporator</text>
-          </g>
-
-          <!-- Compressor (top) -->
-          <g id="comp" transform="translate(270,20)" tabindex="0">
-            <rect x="0" y="0" width="140" height="140" rx="24" fill="#fff" stroke="#d5e4f2" stroke-width="2"/>
-            <circle cx="70" cy="70" r="28" fill="#f3f9ff" stroke="#cfe2f1"/>
-            <text x="70" y="158" text-anchor="middle" fill="#2b5b7a" font-size="14" font-weight="800">Compressor</text>
-          </g>
-
-          <!-- Condenser (right) -->
-          <g id="cond" transform="translate(420,120)" tabindex="0">
-            <rect x="0" y="0" width="220" height="180" rx="18" fill="#ffeae4" stroke="#ffd4c8" stroke-width="2"/>
-            <g stroke="#ffdcd2">
-              <line x1="18" y1="16" x2="18" y2="164"/><line x1="38" y1="16" x2="38" y2="164"/><line x1="58" y1="16" x2="58" y2="164"/>
-              <line x1="78" y1="16" x2="78" y2="164"/><line x1="98" y1="16" x2="98" y2="164"/><line x1="118" y1="16" x2="118" y2="164"/>
-              <line x1="138" y1="16" x2="138" y2="164"/><line x1="158" y1="16" x2="158" y2="164"/><line x1="178" y1="16" x2="178" y2="164"/><line x1="198" y1="16" x2="198" y2="164"/>
-            </g>
-            <text x="110" y="192" text-anchor="middle" fill="#7a3b2b" font-size="14" font-weight="800">Condenser</text>
-          </g>
-
-          <!-- Meter (bottom) -->
-          <g id="meter" transform="translate(270,360)" tabindex="0">
-            <rect x="0" y="0" width="160" height="100" rx="12" fill="#f2fff9" stroke="#cfeedd" stroke-width="2"/>
-            <path d="M16 50 L144 50" stroke="#31c48d" stroke-width="5"/>
-            <circle cx="80" cy="50" r="12" fill="none" stroke="#31c48d" stroke-width="5"/>
-            <text x="80" y="92" text-anchor="middle" fill="#2b5b7a" font-size="12" font-weight="800">Meter</text>
-          </g>
-
-          <!-- Piping (clockwise loop) with CORRECTED arrow directions -->
-          <!-- Evaporator -> Compressor (cool suction) -->
-          <path id="p_ev_to_comp" d="M260 210 L270 210 L270 90" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
-          <!-- Compressor -> Condenser (hot discharge) -->
-          <path id="p_comp_to_cond" d="M410 90 L420 90 L420 210" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
-          <!-- Condenser -> Meter (hot liquid) -->
-          <path id="p_cond_to_meter" d="M420 300 L350 300 L350 360" stroke="var(--hot)" stroke-width="12" fill="none" marker-end="url(#arrowHot)"/>
-          <!-- Meter -> Evaporator (low pressure feed) -->
-          <path id="p_meter_to_evap" d="M270 360 L270 300 L260 300 L260 210" stroke="var(--cool)" stroke-width="12" fill="none" marker-end="url(#arrowCool)"/>
-
-          <defs>
-            <marker id="arrowCool" markerWidth="12" markerHeight="12" refX="6" refY="4" orient="auto">
-              <path d="M0,0 L0,8 L8,4 z" fill="var(--cool)"/>
-            </marker>
-            <marker id="arrowHot" markerWidth="12" markerHeight="12" refX="6" refY="4" orient="auto">
-              <path d="M0,0 L0,8 L8,4 z" fill="var(--hot)"/>
-            </marker>
-          </defs>
-        </svg>
-        <div class="legend" style="margin-top:6px">
+        <!-- Approved illustration embedded -->
+        <div style="position:relative">
+          <img src="/Hvac-troubleshooter-/assets/cycle_approved.webp?v=7.2.1-lite" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+        </div>
+        <div class="legend" style="margin-top:8px">
           <span>Low side</span><i style="background:var(--cool)"></i>
           <span>High side</span><i style="background:var(--hot)"></i>
           <span>Meter</span><i style="background:var(--meter)"></i>
         </div>
-        <div id="compTips" class="tips" style="display:none"></div>
+        <!-- Live Pipes intensity bars -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div style="background:#eaf2fc;border:1px solid var(--line);border-radius:10px;padding:8px">
+            <div style="font-size:12px;color:#5a748a;font-weight:800">Low-Side Intensity</div>
+            <div id="lowSideBar" style="height:10px;background:#e8f2fc;border-radius:6px;overflow:hidden;margin-top:6px">
+              <i style="display:block;height:100%;width:0%"></i>
+            </div>
+          </div>
+          <div style="background:#fff3ef;border:1px solid var(--line);border-radius:10px;padding:8px">
+            <div style="font-size:12px;color:#7a3b2b;font-weight:800">High-Side Intensity</div>
+            <div id="highSideBar" style="height:10px;background:#ffe5db;border-radius:6px;overflow:hidden;margin-top:6px">
+              <i style="display:block;height:100%;width:0%"></i>
+            </div>
+          </div>
+        </div>
       </div>
+</div>
 
       <div class="section-title">Field Readings</div>
       <div class="form-grid">
@@ -249,7 +211,7 @@
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             const toast = $('updateToast'); if(toast) toast.style.display='block';
-          }
+          } catch(e){}
         });
       });
     });
@@ -432,11 +394,17 @@
     return `rgb(${r},${g},${b})`;
   }
   function updatePipeColors(det){
+    try{
     let hotI = 0; if (det.condSat!=null) hotI += clamp01((det.condSat - 95) / 35); if (det.subcool!=null) hotI += clamp01(det.subcool / 20); hotI = clamp01(hotI/2);
     let coolI = 0; if (det.evapSat!=null) coolI += clamp01((45 - det.evapSat) / 15); if (det.superheat!=null) coolI += clamp01(det.superheat / 25); coolI = clamp01(coolI/2);
     const hotColor  = blendHot(hotI), coolColor = blendCool(coolI);
     const p1 = document.getElementById('p_comp_to_cond'); const p2 = document.getElementById('p_cond_to_meter'); const p3 = document.getElementById('p_ev_to_comp'); const p4 = document.getElementById('p_meter_to_evap');
-    if (p1) p1.style.stroke = hotColor; if (p2) p2.style.stroke = hotColor; if (p3) p3.style.stroke = coolColor; if (p4) p4.style.stroke = coolColor;
+    /* v7.2a: live bars only, since we're using a static approved image */
+    const lowBar = document.querySelector('#lowSideBar i');
+    const highBar = document.querySelector('#highSideBar i');
+    if (lowBar) { lowBar.style.width = Math.round(coolI*100)+'%'; lowBar.style.background = blendCool(coolI); }
+    if (highBar){ highBar.style.width = Math.round(hotI*100)+'%';  highBar.style.background = blendHot(hotI);  }
+
   }
 
   function showTips(area, det){
