@@ -15,7 +15,7 @@
   .logo{width:56px;height:56px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(30,100,200,0.12)}
   .logo img{width:40px;height:40px;border-radius:10px}
   h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.2px}
-  .ver{margin-left:6px;padding:2px 6px;border-radius:8px;background:#f0f6ff;border:1px solid var(--line);color:#2b5b7a;font-size:11px;font-weight:800}
+  .ver{margin-left:6px;padding:2px 6px;border-radius:8px;background:#f0f6ff;border:1px solid var(--line);color:#2b5b7a;font-size:11px;font-weight:800;user-select:none;cursor:pointer}
   #installBtn{display:none;margin-left:auto;padding:10px 14px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(90deg,#7eb5ff,#a8e0ff);color:#0a1c2a;cursor:pointer;box-shadow:0 6px 14px rgba(62,140,255,0.25)}
   .main{display:grid;grid-template-columns:1.05fr 0.95fr;gap:18px;margin-top:18px}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 26px rgba(10,30,50,0.06)}
@@ -43,9 +43,12 @@
   .tips{font-size:13px;color:#2b5b7a;background:#f6fbff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
   details summary{cursor:pointer;font-weight:800}
   @media(max-width:980px){.main{grid-template-columns:1fr} input[type=number]{max-width:7ch}}
-  .cycleWrap{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+  .cycleWrap{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;position:relative;overflow:hidden}
+  #overlayArrows{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
   #updateToast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#0a1e2e;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,0.2);display:none;z-index:9999}
   #updateToast button{margin-left:10px;border:0;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer}
+  #debugPanel{display:none;margin-top:8px;font-size:12px;color:#24465f;background:#f1f7ff;border:1px dashed #cfe2f5;border-radius:10px;padding:10px}
+  #debugPanel pre{white-space:pre-wrap;margin:0}
 </style>
 </head>
 <body>
@@ -53,7 +56,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.2a-lite (HF2)</span> <span id="ptBadge" class="badge">PT: —</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.3</span> <span id="ptBadge" class="badge">PT: —</span></h1>
       <div style="font-size:12px;color:#5a748a;margin-top:4px">
         <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
         <span id="learnStats" class="badge" title="Learned tolerances">—</span>
@@ -83,11 +86,25 @@
 
       <hr style="margin:12px 0;border:0;border-top:1px solid var(--line)">
 
-      <div class="section-title">Refrigerant Cycle (Approved Illustration)</div>
+      <div class="section-title">Refrigerant Cycle</div>
       <div class="cycleWrap">
-        <div style="position:relative">
-          <img src="/Hvac-troubleshooter-/assets/cycle_approved.webp?v=7.2.1-lite" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
-        </div>
+        <img src="/Hvac-troubleshooter-/assets/cycle_approved.webp?v=7.2.1-lite" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+        <!-- SVG overlay for corrected arrows -->
+        <svg id="overlayArrows" viewBox="0 0 1000 600" preserveAspectRatio="none">
+          <!-- Metering Device -> Evaporator (low-side correct direction) -->
+          <defs>
+            <marker id="arrowCool" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d9df5"></path>
+            </marker>
+            <marker id="arrowHot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff6a3d"></path>
+            </marker>
+          </defs>
+          <!-- Approximate positions; scaled by viewBox -->
+          <path d="M 520 290 C 560 290 600 300 640 320" stroke="#1d9df5" stroke-width="8" fill="none" marker-end="url(#arrowCool)" opacity="0.9"/>
+          <!-- Compressor -> Condenser (add arrow on discharge) -->
+          <path d="M 360 180 C 420 160 520 150 620 150" stroke="#ff6a3d" stroke-width="9" fill="none" marker-end="url(#arrowHot)" opacity="0.9"/>
+        </svg>
         <div class="legend" style="margin-top:8px">
           <span>Low side</span><i style="background:var(--cool)"></i>
           <span>High side</span><i style="background:var(--hot)"></i>
@@ -107,6 +124,7 @@
             </div>
           </div>
         </div>
+        <div id="debugPanel"><pre id="debugText"></pre></div>
       </div>
 
       <div class="section-title">Field Readings</div>
@@ -179,7 +197,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build 7.2.1-HF2 · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
+    Build 7.3 · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
   </footer>
 </div>
 
@@ -187,7 +205,7 @@
 
 <script>
 (function(){
-  const BUILD_ID = '7.2.1-HF2';
+  const BUILD_ID = '7.3.0';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ const n=Number(v); return isNaN(n)?null:n; };
@@ -245,7 +263,6 @@
     const idx = await loadPTIndex();
     const sel = $('refrig'); sel.innerHTML='';
     if (!idx.length) {
-      // Fallback list
       ['R410A','R22','R32','R454B'].forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); PT[n]=PT_FALLBACK[n]; ptMeta[n]='Fallback'; });
       if (PT_BADGE) { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
       sel.value='R410A';
@@ -376,7 +393,19 @@
     if(primary.cause.includes('TXV overfeeding')) steps.push('Adjust TXV superheat per manufacturer; verify after stabilization.');
     if(det.deltaT==null) steps.push('Note: ΔT not provided — verify airflow to refine confidence.');
 
-    return {details:det, ranked, primary, steps};
+    return {details:det, ranked, primary, steps, input:d};
+  }
+
+  // Reasoning details for each cause
+  function reasoningLines(det, d){
+    const lines = [];
+    if(det.evapSat!=null) lines.push(`Evap Sat: ${det.evapSat}°F (target ~40°F, Δ=${round1(det.evapSat-40)}°F)`);
+    if(det.condSat!=null) lines.push(`Cond Sat: ${det.condSat}°F`);
+    if(det.superheat!=null && d.targetSH!=null) lines.push(`Superheat: ${det.superheat}°F (target ${d.targetSH}°F, Δ=${round1(det.superheat-d.targetSH)}°F)`);
+    if(det.subcool!=null  && d.targetSC!=null) lines.push(`Subcool: ${det.subcool}°F (target ${d.targetSC}°F, Δ=${round1(det.subcool-d.targetSC)}°F)`);
+    if(det.deltaT!=null) lines.push(`ΔT: ${det.deltaT}°F (target 20°F, Δ=${round1(det.deltaT-20)}°F)`);
+    if(d.suctionP!=null && d.liquidP!=null) lines.push(`Pressures: Suction ${d.suctionP} psig, Liquid ${d.liquidP} psig`);
+    return lines;
   }
 
   // Live intensity bars
@@ -391,8 +420,21 @@
     if (highBar){ highBar.style.width = Math.round(hotI*100)+'%';  highBar.style.background = blendHot(hotI);  }
   }
 
+  // Hidden debug (triple-tap version badge)
+  let tapCount = 0; let tapTimer=null;
+  const vb = $('versionBadge');
+  if (vb) vb.addEventListener('click', ()=>{
+    tapCount++; clearTimeout(tapTimer);
+    tapTimer = setTimeout(()=>{ tapCount=0; }, 600);
+    if (tapCount>=3){
+      tapCount=0;
+      const dp = $('debugPanel');
+      if (dp) dp.style.display = (dp.style.display==='none'||!dp.style.display)?'block':'none';
+    }
+  });
+
   // History helpers
-  const HIST_KEY='hvac_hist_v7_2';
+  const HIST_KEY='hvac_hist_v7_3';
   const nowStr=()=> new Date().toLocaleString();
   const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
   const saveHist=(a)=> localStorage.setItem(HIST_KEY, JSON.stringify(a));
@@ -409,6 +451,19 @@
     });
   }
 
+  function populateConfirmOptions(r){
+    const sel = $('confirmSelect'); if(!sel) return;
+    const keep = sel.value;
+    sel.innerHTML='';
+    const optBlank = document.createElement('option'); optBlank.value=''; optBlank.textContent='— Optional: Confirm diagnosis (logs to CSV) —'; sel.appendChild(optBlank);
+    const seen = new Set();
+    const add = (label)=>{ if(seen.has(label)) return; seen.add(label); const o=document.createElement('option'); o.value=label; o.textContent=label; sel.appendChild(o); };
+    if (r.primary && r.primary.cause) add(r.primary.cause);
+    (r.ranked||[]).forEach(x=> add(x.cause));
+    add('System operating properly');
+    for (const o of sel.options){ if(o.value===keep){ sel.value=keep; break; } }
+  }
+
   function renderResults(r){
     const pf=$('primaryFault'), cp=$('confPct');
     if (pf) pf.textContent = r.primary.cause;
@@ -416,11 +471,36 @@
     const set = (id,val)=>{ const el=$(id); if(el) el.textContent = (val==null?'—':val+' °F'); };
     set('evapSat', r.details.evapSat); set('condSat', r.details.condSat); set('superheat', r.details.superheat); set('subcool', r.details.subcool);
     const dtEl=$('deltat'); if(dtEl) dtEl.textContent = (r.details.deltaT==null?'—':r.details.deltaT+' °F');
-    const list=$('causesList'); if(list){ list.innerHTML=''; r.ranked.forEach(it=>{ const row=document.createElement('div'); row.className='cause';
-      const why = document.createElement('details'); why.innerHTML = `<summary>${it.cause} — ${it.pct}%</summary>`; row.appendChild(why);
-      const bar=document.createElement('div'); bar.className='bar'; bar.innerHTML=`<i style="width:${Math.max(6, it.pct)}%"></i>`; row.appendChild(bar); list.appendChild(row); }); }
+
+    // Reasoning details
+    const list=$('causesList'); if(list){ list.innerHTML='';
+      const lines = reasoningLines(r.details, r.input);
+      r.ranked.forEach(it=>{
+        const row=document.createElement('div'); row.className='cause';
+        const why = document.createElement('details');
+        const bullets = lines.map(s=>`<li>${s}</li>`).join('');
+        why.innerHTML = `<summary>${it.cause} — ${it.pct}%</summary><ul style="margin:6px 0 0 18px">${bullets}</ul>`;
+        row.appendChild(why);
+        const bar=document.createElement('div'); bar.className='bar'; bar.innerHTML=`<i style="width:${Math.max(6, it.pct)}%"></i>`; row.appendChild(bar);
+        list.appendChild(row);
+      });
+    }
+
     const ns=$('nextSteps'); if(ns){ ns.innerHTML=''; r.steps.forEach(s=>{ const li=document.createElement('li'); li.textContent=s; ns.appendChild(li); }); }
+    // Debug panel content
+    const dbg = $('debugText');
+    if (dbg){
+      const d=r.input, det=r.details;
+      dbg.textContent = [
+        `Ref:${d.refrig} Type:${d.systemType}`,
+        `SP:${d.suctionP}psig ST:${d.suctionT}°F | LP:${d.liquidP}psig LT:${d.liquidT}°F`,
+        `EvapSat:${det.evapSat}°F CondSat:${det.condSat}°F | SH:${det.superheat}°F (tgt ${d.targetSH}) SC:${det.subcool}°F (tgt ${d.targetSC})`,
+        (det.deltaT!=null?`ΔT:${det.deltaT}°F (20 target)`: 'ΔT: — (SAT/RAT optional)'),
+        `Primary:${r.primary.cause} @ ${r.primary.pct}%`
+      ].join('\n');
+    }
     updateBars(r.details);
+    populateConfirmOptions(r);
   }
 
   function readInputs(){
@@ -445,7 +525,7 @@
     const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.2a-lite-HF2', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
@@ -457,9 +537,25 @@
       const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
       const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","evapSat","condSat","superheat","subcool","deltaT","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials"];
       const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_2.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_3.csv'; a.click();
     });
-    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_2'); renderHist(); } });
+    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_3'); renderHist(); } });
+
+    // Confirm diagnosis logging
+    const confirmBtn = $('confirmBtn');
+    if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
+      const sel = $('confirmSelect');
+      if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
+      const d = readInputs();
+      const r = diagnoseAll(d);
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3', refrig:d.refrig, systemType:d.systemType,
+        indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
+        suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
+        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
+        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:($('learningToggle')||{}).checked, testerInitials:'' };
+      const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist();
+      alert('Confirmation recorded.');
+    });
   }
 
   async function boot(){
