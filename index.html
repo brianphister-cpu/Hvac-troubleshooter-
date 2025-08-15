@@ -8,7 +8,7 @@
 <link rel="icon" href="/Hvac-troubleshooter-/icon-192.png">
 <meta name="theme-color" content="#eaf2fb" />
 <style>
-  :root{ --bg:#f6fafd; --bg2:#ffffff; --panel:#ffffff; --ink:#0a1e2e; --muted:#5a748a; --line:#dfeaf5; --accent:#2f7bff; --cool:#1d9df5; --hot:#ff6a3d; --meter:#31c48d; --soft:#edf4fb; }
+  :root{ --bg:#f6fafd; --bg2:#ffffff; --panel:#ffffff; --ink:#0a1e2e; --muted:#5a748a; --line:#dfeaf5; --accent:#2f7bff; --cool:#1d9df5; --hot:#ff6a3d; --meter:#31c48d; --soft:#edf4fb; --bad:#b00020; }
   html,body{margin:0;height:100%;font-family:Inter,system-ui,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--ink)}
   .app{max-width:1200px;margin:18px auto;padding:18px}
   header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -23,7 +23,6 @@
   .form-grid.two-col{grid-template-columns:1fr 1fr}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
   input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:#fff;color:#0c263b;font-size:15px}
-  /* POLISH: limit visible width to ~6 characters on number inputs */
   input[type=number]{max-width:6.5ch}
   .section-title{font-size:12px;color:var(--muted);margin:6px 0 8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
   .btn{padding:12px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800}
@@ -40,6 +39,7 @@
   .legend{display:flex;gap:10px;color:#56728a;font-size:12px;align-items:center}
   .legend i{display:inline-block;width:14px;height:10px;border-radius:3px}
   .badge{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:8px;font-size:11px;border:1px solid var(--line);color:#2b5b7a}
+  .badge.bad{color:#fff;background:#b00020;border-color:#b00020}
   .tips{font-size:13px;color:#2b5b7a;background:#f6fbff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
   details summary{cursor:pointer;font-weight:800}
   @media(max-width:980px){.main{grid-template-columns:1fr} input[type=number]{max-width:7ch}}
@@ -53,7 +53,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.2a-lite (HF1)</span> <span id="ptBadge" class="badge">PT: —</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span class="ver">v7.2a-lite (HF2)</span> <span id="ptBadge" class="badge">PT: —</span></h1>
       <div style="font-size:12px;color:#5a748a;margin-top:4px">
         <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
         <span id="learnStats" class="badge" title="Learned tolerances">—</span>
@@ -179,7 +179,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build 7.2.1-HF1 · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
+    Build 7.2.1-HF2 · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
   </footer>
 </div>
 
@@ -187,11 +187,19 @@
 
 <script>
 (function(){
-  const BUILD_ID = '7.2.1-HF1';
+  const BUILD_ID = '7.2.1-HF2';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ const n=Number(v); return isNaN(n)?null:n; };
   const round1 = (n)=> n==null?null:Math.round(n*10)/10;
+
+  // Embedded PT fallback (°F / psig). Approximate points for interpolation.
+  const PT_FALLBACK = {
+    R410A: [{t:30,p:100},{t:35,p:110},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:158},{t:60,p:175}],
+    R22:   [{t:30,p:56},{t:35,p:61},{t:40,p:66},{t:45,p:72},{t:50,p:78},{t:55,p:85},{t:60,p:92}],
+    R32:   [{t:30,p:90},{t:35,p:98},{t:40,p:107},{t:45,p:117},{t:50,p:128},{t:55,p:140},{t:60,p:153}],
+    R454B: [{t:30,p:88},{t:35,p:96},{t:40,p:105},{t:45,p:115},{t:50,p:126},{t:55,p:138},{t:60,p:151}]
+  };
 
   // Safe PWA install handling
   let deferredPrompt; const installBtn = $('installBtn');
@@ -200,7 +208,7 @@
   const isStandalone = ()=> window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
   if (isStandalone() && installBtn) installBtn.style.display='none';
 
-  // Service worker with update toast (guarded)
+  // Service worker update toast (guarded)
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register(SUBPATH+'service-worker.js').then(reg=>{
       reg.addEventListener('updatefound', ()=>{
@@ -223,7 +231,7 @@
     window.location.reload();
   });
 
-  // PT loader with strong fallback
+  // PT loader with strong fallback & badge
   const PT = {}, ptMeta = {}, PT_BADGE = $('ptBadge');
   async function loadPTIndex(){
     try{ const r = await fetch(SUBPATH+'pt/index.json?v='+BUILD_ID, {cache:'reload'}); const idx = await r.json(); return idx.refrigerants||[]; }
@@ -237,16 +245,24 @@
     const idx = await loadPTIndex();
     const sel = $('refrig'); sel.innerHTML='';
     if (!idx.length) {
-      ['R410A','R22','R32','R454B'].forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); });
-      if (PT_BADGE) PT_BADGE.textContent='PT: Fallback';
+      // Fallback list
+      ['R410A','R22','R32','R454B'].forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); PT[n]=PT_FALLBACK[n]; ptMeta[n]='Fallback'; });
+      if (PT_BADGE) { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
+      sel.value='R410A';
       return;
     }
+    let usedFallback = false;
     for (const item of idx) {
       const o=document.createElement('option'); o.value=item.name; o.textContent=item.name.replace('R','R-'); sel.appendChild(o);
-      PT[item.name] = await loadPTFile(item.file); ptMeta[item.name]=item.source||'CSV';
+      const tab = await loadPTFile(item.file);
+      if (tab && tab.length) { PT[item.name] = tab; ptMeta[item.name]=item.source||'CSV'; }
+      else { PT[item.name] = PT_FALLBACK[item.name] || []; ptMeta[item.name]='Fallback'; usedFallback = true; }
     }
     sel.value = 'R410A';
-    if (PT_BADGE) PT_BADGE.textContent = 'PT: ' + (ptMeta['R410A']||'CSV');
+    if (PT_BADGE) {
+      PT_BADGE.textContent = 'PT: ' + (ptMeta['R410A']||'CSV');
+      if (usedFallback || (ptMeta['R410A']==='Fallback')) PT_BADGE.classList.add('bad');
+    }
   }
 
   function tFromPsig(ref, psig){
@@ -375,17 +391,7 @@
     if (highBar){ highBar.style.width = Math.round(hotI*100)+'%';  highBar.style.background = blendHot(hotI);  }
   }
 
-  // Wire buttons safely
-  function readInputs(){
-    return {
-      refrig: ($('refrig')||{}).value || 'R410A', systemType: ($('systemType')||{}).value || 'txv',
-      indoorDb: toNum(($('indoorDb')||{}).value), indoorWb: toNum(($('indoorWb')||{}).value), outdoorDb: toNum(($('outdoorDb')||{}).value),
-      targetSH: toNum(($('targetSH')||{}).value) ?? 10, targetSC: toNum(($('targetSC')||{}).value) ?? 10,
-      suctionP: toNum(($('suctionP')||{}).value), suctionT: toNum(($('suctionT')||{}).value),
-      liquidP: toNum(($('liquidP')||{}).value), liquidT: toNum(($('liquidT')||{}).value),
-      supplyT: toNum(($('supplyT')||{}).value), returnT: toNum(($('returnT')||{}).value)
-    };
-  }
+  // History helpers
   const HIST_KEY='hvac_hist_v7_2';
   const nowStr=()=> new Date().toLocaleString();
   const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
@@ -417,35 +423,57 @@
     updateBars(r.details);
   }
 
+  function readInputs(){
+    return {
+      refrig: ($('refrig')||{}).value || 'R410A', systemType: ($('systemType')||{}).value || 'txv',
+      indoorDb: toNum(($('indoorDb')||{}).value), indoorWb: toNum(($('indoorWb')||{}).value), outdoorDb: toNum(($('outdoorDb')||{}).value),
+      targetSH: toNum(($('targetSH')||{}).value) ?? 10, targetSC: toNum(($('targetSC')||{}).value) ?? 10,
+      suctionP: toNum(($('suctionP')||{}).value), suctionT: toNum(($('suctionT')||{}).value),
+      liquidP: toNum(($('liquidP')||{}).value), liquidT: toNum(($('liquidT')||{}).value),
+      supplyT: toNum(($('supplyT')||{}).value), returnT: toNum(($('returnT')||{}).value)
+    };
+  }
+
   function runDiagnose(){
     const d=readInputs();
     if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
     const r = diagnoseAll(d); renderResults(r);
   }
-  const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', runDiagnose);
 
-  const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
-    const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
-    const r=diagnoseAll(d);
-    const entry = { time: nowStr(), appVersion:'v7.2a-lite-HF1', refrig:d.refrig, systemType:d.systemType,
-      indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
-      suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
-      evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
-      suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:($('learningToggle')||{}).checked, testerInitials:'' };
-    const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
-  });
+  function initButtons(){
+    const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', runDiagnose);
+    const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
+      const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
+      const r=diagnoseAll(d);
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.2a-lite-HF2', refrig:d.refrig, systemType:d.systemType,
+        indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
+        suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
+        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
+        suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:($('learningToggle')||{}).checked, testerInitials:'' };
+      const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
+    });
+    const exportBtn=$('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
+      const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
+      const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+      const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","evapSat","condSat","superheat","subcool","deltaT","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials"];
+      const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_2.csv'; a.click();
+    });
+    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_2'); renderHist(); } });
+  }
 
-  const exportBtn=$('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
-    const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
-    const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-    const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","evapSat","condSat","superheat","subcool","deltaT","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials"];
-    const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\n');
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_2.csv'; a.click();
-  });
-
-  const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } });
-
-  async function boot(){ await initRefrigerants(); renderHist(); }
+  async function boot(){
+    await initRefrigerants();
+    // Populate select if empty (extreme fallback)
+    const sel=$('refrig');
+    if (sel && sel.options.length===0) {
+      ['R410A','R22','R32','R454B'].forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); PT[n]=PT_FALLBACK[n]; });
+      if (PT_BADGE) { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
+      sel.value='R410A';
+    }
+    renderHist();
+    initButtons();
+  }
   boot();
 })();
 </script>
