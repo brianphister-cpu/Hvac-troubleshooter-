@@ -51,7 +51,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.3b</span> <span id="ptBadge" class="badge">PT: —</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.3b+ΔT</span> <span id="ptBadge" class="badge">PT: —</span></h1>
       <div style="font-size:12px;color:#5a748a;margin-top:4px">
         <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
         <span id="learnStats" class="badge" title="Learned tolerances">—</span>
@@ -83,12 +83,7 @@
 
       <div class="section-title">Refrigerant Cycle</div>
       <div class="panel" style="padding:12px">
-        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)" onerror="this.onerror=null; this.src='/Hvac-troubleshooter-/assets/cycle_approved.webp?v=7.2.1-lite';">
-        <div class="legend" style="margin-top:8px">
-          <span>Low side</span><i style="background:var(--cool)"></i>
-          <span>High side</span><i style="background:var(--hot)"></i>
-          <span>Meter</span><i style="background:var(--meter)"></i>
-        </div>
+        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/cycle_approved.webp?v=7.3b" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
         <div id="debugPanel"><pre id="debugText"></pre></div>
       </div>
 
@@ -108,6 +103,7 @@
       <div class="form-grid">
         <div><label>Supply Air Temp (°F) — SAT</label><input id="supplyT" type="number" placeholder="optional"></div>
         <div><label>Return Air Temp (°F) — RAT</label><input id="returnT" type="number" placeholder="optional"></div>
+        <div><label>Delta T (°F) — manual</label><input id="deltaTManual" type="number" placeholder="optional"></div>
       </div>
 
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -133,6 +129,7 @@
             <div id="confPct" style="font-size:22px;font-weight:900;color:#2f7bff">—%</div>
           </div>
         </div>
+        <div id="confNote" style="margin-top:4px;color:#5a748a;font-size:12px"></div>
         <div class="metric-row">
           <div class="metric"><div class="k">Evap Sat</div><div class="v" id="evapSat">— °F</div></div>
           <div class="metric"><div class="k">Cond Sat</div><div class="v" id="condSat">— °F</div></div>
@@ -162,7 +159,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build 7.3b · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
+    Build 7.3b+ΔT · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
   </footer>
 </div>
 
@@ -170,95 +167,29 @@
 
 <script>
 (function(){
-  const BUILD_ID = '7.3b.0';
+  const BUILD_ID = '7.3b.dt.1';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ const n=Number(v); return isNaN(n)?null:n; };
   const round1 = (n)=> n==null?null:Math.round(n*10)/10;
 
-  // Embedded PT fallback (°F / psig). Approximate points for interpolation.
-  const PT_FALLBACK = {
-    R410A: [{t:30,p:100},{t:35,p:110},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:158},{t:60,p:175}],
-    R22:   [{t:30,p:56},{t:35,p:61},{t:40,p:66},{t:45,p:72},{t:50,p:78},{t:55,p:85},{t:60,p:92}],
-    R32:   [{t:30,p:90},{t:35,p:98},{t:40,p:107},{t:45,p:117},{t:50,p:128},{t:55,p:140},{t:60,p:153}],
-    R454B: [{t:30,p:88},{t:35,p:96},{t:40,p:105},{t:45,p:115},{t:50,p:126},{t:55,p:138},{t:60,p:151}]
-  };
+  // PT minimal fallback
+  const PT = { R410A:[{t:30,p:100},{t:35,p:110},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:158},{t:60,p:175}] };
 
-  // Safe PWA install handling
-  let deferredPrompt; const installBtn = $('installBtn');
-  window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt = e; if(installBtn) installBtn.style.display='inline-block'; });
-  if (installBtn) installBtn.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.style.display='none'; });
-  const isStandalone = ()=> window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
-  if (isStandalone() && installBtn) installBtn.style.display='none';
+  const PT_BADGE = $('ptBadge');
+  if (PT_BADGE) PT_BADGE.textContent = 'PT: CSV';
 
-  // Service worker update toast (guarded)
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(SUBPATH+'service-worker.js').then(reg=>{
-      reg.addEventListener('updatefound', ()=>{
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', ()=>{
-          if (nw.state==='installed' && navigator.serviceWorker.controller) {
-            const toast=$('updateToast'); if(toast) toast.style.display='block';
-          }
-        });
-      });
-    }).catch(()=>{});
-  }
-  const refreshBtn = $('refreshBtn');
-  if (refreshBtn) refreshBtn.addEventListener('click', async ()=>{
-    try {
-      const reg = await navigator.serviceWorker.getRegistration(SUBPATH);
-      if (reg && reg.waiting) reg.waiting.postMessage({ type:'SKIP_WAITING' });
-    } catch(e){}
-    window.location.reload();
-  });
-
-  // PT loader with strong fallback & badge
-  const PT = {}, ptMeta = {}, PT_BADGE = $('ptBadge');
-  async function loadPTIndex(){
-    try{ const r = await fetch(SUBPATH+'pt/index.json?v='+BUILD_ID, {cache:'reload'}); const idx = await r.json(); return idx.refrigerants||[]; }
-    catch(e){ return []; }
-  }
-  async function loadPTFile(file){
-    try{ const r = await fetch(SUBPATH+'pt/'+file+'?v='+BUILD_ID, {cache:'reload'}); const d = await r.json(); return d.table||[]; }
-    catch(e){ return []; }
-  }
-  async function initRefrigerants(){
-    const idx = await loadPTIndex();
-    const sel = $('refrig'); sel.innerHTML='';
-    if (!idx.length) {
-      ['R410A','R22','R32','R454B'].forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); PT[n]=PT_FALLBACK[n]; ptMeta[n]='Fallback'; });
-      if (PT_BADGE) { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
-      sel.value='R410A';
-      return;
-    }
-    let usedFallback = false;
-    for (const item of idx) {
-      const o=document.createElement('option'); o.value=item.name; o.textContent=item.name.replace('R','R-'); sel.appendChild(o);
-      const tab = await loadPTFile(item.file);
-      if (tab && tab.length) { PT[item.name] = tab; ptMeta[item.name]=item.source||'CSV'; }
-      else { PT[item.name] = PT_FALLBACK[item.name] || []; ptMeta[item.name]='Fallback'; usedFallback = true; }
-    }
-    sel.value = 'R410A';
-    if (PT_BADGE) {
-      const src = (ptMeta['R410A']==='Fallback')?'Fallback':'CSV';
-      PT_BADGE.textContent = 'PT: ' + src;
-      if (src==='Fallback') PT_BADGE.classList.add('bad'); else PT_BADGE.classList.remove('bad');
-    }
-  }
+  const TARGETS = { evapSat:40, deltaT:20 };
+  const BASE_TOL = { sh:3, sc:3, evap:3, dt:4 };
+  const near = (val, target, tol)=> val!=null && Math.abs(val-target) <= tol+1e-6;
 
   function tFromPsig(ref, psig){
-    const tab = PT[ref]; if(!tab || !tab.length || psig==null) return null;
+    const tab = PT[ref] || PT['R410A']; if(!tab || !tab.length || psig==null) return null;
     if(psig <= tab[0].p) return tab[0].t;
     if(psig >= tab[tab.length-1].p) return tab[tab.length-1].t;
     for(let i=0;i<tab.length-1;i++){ const a=tab[i], b=tab[i+1]; if(psig>=a.p && psig<=b.p){ const f=(psig-a.p)/(b.p-a.p); return a.t + f*(b.t-a.t); } }
     return null;
   }
-
-  const BASE_TOL = { sh:3, sc:3, evap:3, dt:4 };
-  const TARGETS = { evapSat:40, deltaT:20 };
-  const near = (val, target, tol)=> val!=null && Math.abs(val-target) <= tol+1e-6;
 
   function computeConfidence(det, d, TOL){
     let score = 0, max = 0;
@@ -283,35 +214,31 @@
     return Math.round((score/max)*100);
   }
 
-  function classifyNearStates(d, det, TOL){
-    const proper = near(det.evapSat, TARGETS.evapSat, TOL.evap) &&
-                   near(det.superheat, d.targetSH, TOL.sh) &&
-                   near(det.subcool,  d.targetSC, TOL.sc) &&
-                   (det.deltaT==null || near(det.deltaT, TARGETS.deltaT, TOL.dt));
-    if(proper) return 'System operating properly';
-    const shErr = (det.superheat!=null && d.targetSH!=null) ? det.superheat - d.targetSH : null;
-    const scErr = (det.subcool !=null && d.targetSC!=null) ? det.subcool  - d.targetSC : null;
-    const slightUnder = ( (shErr!=null && shErr >=  TOL.sh && shErr <= 6) || (scErr!=null && scErr <= -TOL.sc && scErr >= -6) );
-    const slightOver  = ( (shErr!=null && shErr <= -TOL.sh && shErr >= -6) || (scErr!=null && scErr >=  TOL.sc && scErr <= 6) );
-    if(slightUnder) return 'Slightly undercharged';
-    if(slightOver ) return 'Slightly overcharged';
-    return null;
-  }
-
   function diagnoseAll(d){
     const evapSat = tFromPsig(d.refrig, d.suctionP);
     const condSat = tFromPsig(d.refrig, d.liquidP);
     const superheat = (d.suctionT!=null && evapSat!=null)? d.suctionT - evapSat : null;
     const subcool  = (d.liquidT!=null && condSat!=null)?  condSat - d.liquidT : null;
-    const deltaT   = (d.supplyT!=null && d.returnT!=null)? d.returnT - d.supplyT : null;
-    const det = {evapSat:round1(evapSat),condSat:round1(condSat),superheat:superheat==null?null:round1(superheat),subcool:subcool==null?null:round1(subcool),deltaT:deltaT==null?null:round1(deltaT)};
+
+    // ΔT precedence: (1) if SAT&RAT present -> calc; (2) else if manual ΔT present -> use; (3) else null
+    let deltaT = null, deltaTSource = '—';
+    if (d.supplyT!=null && d.returnT!=null) { deltaT = d.returnT - d.supplyT; deltaTSource = 'calc'; }
+    else if (d.deltaTManual!=null) { deltaT = d.deltaTManual; deltaTSource = 'manual'; }
+
+    const det = {
+      evapSat: round1(evapSat), condSat: round1(condSat),
+      superheat: superheat==null?null:round1(superheat),
+      subcool: subcool==null?null:round1(subcool),
+      deltaT: deltaT==null?null:round1(deltaT), deltaTSource
+    };
+
     const TOL = BASE_TOL;
 
     let causes = {'Undercharge (low refrigerant)':8,'Overcharge (too much refrigerant)':6,'Restriction — metering device / drier':6,'Low airflow across evaporator':6,'Non-condensables (air in system)':4,'Compressor mechanical issue (valves/leak)':4,'Equipment mismatch (ODU>IDU)':4,'TXV overfeeding (adjust superheat)':0};
 
     if(d.systemType==='txv' && det.superheat!=null && d.targetSH!=null){
       const shErr = det.superheat - d.targetSH;
-      const othersOK = near(det.subcool, d.targetSC, TOL.sc) && near(det.evapSat, TARGETS.evapSat, TOL.evap) && (det.deltaT==null || near(det.deltaT, TARGETS.deltaT, TOL.dt));
+      const othersOK = (det.subcool!=null && Math.abs(det.subcool - d.targetSC) <= TOL.sc) && (det.evapSat!=null && Math.abs(det.evapSat - 40) <= TOL.evap) && (det.deltaT==null || Math.abs(det.deltaT - 20) <= TOL.dt);
       if(shErr < -TOL.sh && othersOK) causes['TXV overfeeding (adjust superheat)'] += 20;
     }
 
@@ -335,31 +262,31 @@
     const shOK = det.superheat!=null && d.targetSH!=null && Math.abs(det.superheat-d.targetSH) <= TOL.sh;
     const scOK = det.subcool !=null && d.targetSC!=null && Math.abs(det.subcool -d.targetSC) <= TOL.sc;
     if(shOK && scOK){
-      if(det.deltaT!=null && det.deltaT < (TARGETS.deltaT - 3)){ causes['Low airflow across evaporator'] += 18; causes['Equipment mismatch (ODU>IDU)'] += 8; }
-      if(!near(det.evapSat, TARGETS.evapSat, TOL.evap)){ causes['Low airflow across evaporator'] += 10; causes['Equipment mismatch (ODU>IDU)'] += 6; }
+      if(det.deltaT!=null && det.deltaT < (20 - 3)){ causes['Low airflow across evaporator'] += 18; causes['Equipment mismatch (ODU>IDU)'] += 8; }
+      if(!(det.evapSat!=null && Math.abs(det.evapSat - 40) <= TOL.evap)){ causes['Low airflow across evaporator'] += 10; causes['Equipment mismatch (ODU>IDU)'] += 6; }
     }
 
     let ranked = Object.keys(causes).map(k=>({cause:k,score:causes[k]})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
-    const nearState = classifyNearStates(d, det, TOL);
-    if(nearState) ranked.unshift({cause:nearState, score:100});
+    const nearOk = (det.evapSat!=null && Math.abs(det.evapSat-40)<=TOL.evap) &&
+                   (det.superheat!=null && d.targetSH!=null && Math.abs(det.superheat-d.targetSH)<=TOL.sh) &&
+                   (det.subcool!=null && d.targetSC!=null && Math.abs(det.subcool-d.targetSC)<=TOL.sc) &&
+                   (det.deltaT==null || Math.abs(det.deltaT-20)<=TOL.dt);
+    if (nearOk) ranked.unshift({cause:'System operating properly', score:100});
     const total = ranked.reduce((s,i)=>s+i.score,0)||1; ranked.forEach(a=>a.pct=Math.round((a.score/total)*100));
     ranked = ranked.slice(0,3);
-    const conf = computeConfidence(det, d, TOL);
+    const conf = computeConfidence(det, d, BASE_TOL);
     const primary = ranked[0] ? {cause: ranked[0].cause, pct: conf} : {cause:'Insufficient data', pct:0};
-    let steps = [];
-    if(primary.cause.includes('operating properly')) steps.push('No corrective action required. Continue normal monitoring.');
-    if(primary.cause.includes('Slightly undercharged')) steps.push('Add small amount; verify subcool/superheat & ΔT after stabilization.');
-    if(primary.cause.includes('Slightly overcharged')) steps.push('Recover a small amount; recheck SC/SH and ΔT.');
-    if(primary.cause.includes('Undercharge')) steps.push('Leak check; charge to spec using targets.');
-    if(primary.cause.includes('Overcharge')) steps.push('Recover to target subcool; verify airflow then recheck.');
-    if(primary.cause.includes('Restriction')) steps.push('Inspect/replace drier; check TXV/orifice screens.');
-    if(primary.cause.includes('Low airflow')) steps.push('Check filter, blower amps, coil cleanliness, duct restrictions; measure CFM if available.');
-    if(primary.cause.includes('Non-condensables')) steps.push('Recover & deep vacuum; recharge by weight.');
-    if(primary.cause.includes('Compressor')) steps.push('Check amp draw; valve/leak-down tests; verify compression ratio.');
-    if(primary.cause.includes('TXV overfeeding')) steps.push('Adjust TXV superheat per manufacturer; verify after stabilization.');
-    if(det.deltaT==null) steps.push('Note: ΔT not provided — verify airflow to refine confidence.');
 
-    return {details:det, ranked, primary, steps, input:d};
+    // Confidence note
+    let noteBits = [];
+    if (det.deltaT==null) noteBits.push('ΔT missing (enter manual or SAT/RAT)');
+    else noteBits.push(det.deltaTSource==='manual' ? 'ΔT provided by tech' : 'ΔT computed from SAT/RAT');
+    if (det.superheat!=null && d.targetSH!=null && Math.abs(det.superheat-d.targetSH)<=BASE_TOL.sh) noteBits.push('SH near target');
+    if (det.subcool!=null && d.targetSC!=null && Math.abs(det.subcool-d.targetSC)<=BASE_TOL.sc) noteBits.push('SC near target');
+    if (det.evapSat!=null && Math.abs(det.evapSat-40)<=BASE_TOL.evap) noteBits.push('Evap sat near 40°F');
+    const confNote = noteBits.join(' • ');
+
+    return {details:det, ranked, primary, steps:[], input:d, confNote};
   }
 
   function reasoningLines(det, d){
@@ -368,23 +295,13 @@
     if(det.condSat!=null) lines.push(`Cond Sat: ${det.condSat}°F`);
     if(det.superheat!=null && d.targetSH!=null) lines.push(`Superheat: ${det.superheat}°F (target ${d.targetSH}°F, Δ=${round1(det.superheat-d.targetSH)}°F)`);
     if(det.subcool!=null  && d.targetSC!=null) lines.push(`Subcool: ${det.subcool}°F (target ${d.targetSC}°F, Δ=${round1(det.subcool-d.targetSC)}°F)`);
-    if(det.deltaT!=null) lines.push(`ΔT: ${det.deltaT}°F (target 20°F, Δ=${round1(det.deltaT-20)}°F)`);
-    if(d.suctionP!=null && d.liquidP!=null) lines.push(`Pressures: Suction ${d.suctionP} psig, Liquid ${d.liquidP} psig`);
+    if(det.deltaT!=null) lines.push(`ΔT (${det.deltaTSource}): ${det.deltaT}°F (target 20°F, Δ=${round1(det.deltaT-20)}°F)`);
     return lines;
   }
 
-  const clamp01 = (x)=> Math.max(0, Math.min(1, x));
-  const blendHot = (i)=> `rgb(${Math.round(0xff*(1-i)+0xd0*i)},${Math.round(0x9d*(1-i)+0x2f*i)},${Math.round(0x80*(1-i)+0x00*i)})`;
-  const blendCool= (i)=> `rgb(${Math.round(0xa6*(1-i)+0x04*i)},${Math.round(0xdb*(1-i)+0x59*i)},${Math.round(0xff*(1-i)+0xa8*i)})`;
-  function updateBars(det){
-    let hotI = 0; if (det.condSat!=null) hotI += clamp01((det.condSat - 95) / 35); if (det.subcool!=null) hotI += clamp01(det.subcool / 20); hotI = clamp01(hotI/2);
-    let coolI = 0; if (det.evapSat!=null) coolI += clamp01((45 - det.evapSat) / 15); if (det.superheat!=null) coolI += clamp01(det.superheat / 25); coolI = clamp01(coolI/2);
-    const lowBar = document.querySelector('#lowSideBar i'); const highBar = document.querySelector('#highSideBar i');
-    if (lowBar) { lowBar.style.width = Math.round(coolI*100)+'%'; lowBar.style.background = blendCool(coolI); }
-    if (highBar){ highBar.style.width = Math.round(hotI*100)+'%';  highBar.style.background = blendHot(hotI);  }
-  }
+  function updateBars(){}
 
-  // Hidden debug (triple-tap version badge)
+  // Hidden debug
   let tapCount = 0; let tapTimer=null;
   const vb = $('versionBadge');
   if (vb) vb.addEventListener('click', ()=>{
@@ -398,7 +315,7 @@
   });
 
   // History helpers
-  const HIST_KEY='hvac_hist_v7_3b';
+  const HIST_KEY='hvac_hist_v7_3b_dt';
   const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
   const saveHist=(a)=> localStorage.setItem(HIST_KEY, JSON.stringify(a));
   function renderHist(){
@@ -407,7 +324,7 @@
     list.innerHTML='';
     a.forEach((h,i)=>{
       const d=document.createElement('div'); d.className='hist';
-      d.innerHTML = `<div><strong>${h.refrig||''}</strong> · ${h.time||''}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP||''} ST:${h.suctionT||''} · LP:${h.liquidP||''} LT:${h.liquidT||''} · ΔT:${h.deltaT??'—'} · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct||0}%</span></div>`;
+      d.innerHTML = `<div><strong>${h.refrig||''}</strong> · ${h.time||''}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP||''} ST:${h.suctionT||''} · LP:${h.liquidP||''} LT:${h.liquidT||''} · ΔT:${h.deltaT??'—'} (${h.deltaTSource||'—'}) · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct||0}%</span></div>`;
       const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
       del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); };
       d.appendChild(del); list.appendChild(d);
@@ -428,9 +345,10 @@
   }
 
   function renderResults(r){
-    const pf=$('primaryFault'), cp=$('confPct');
+    const pf=$('primaryFault'), cp=$('confPct'), note=$('confNote');
     if (pf) pf.textContent = r.primary.cause;
     if (cp) { let confAdj=r.primary.pct||0; if(r.primary.cause.toLowerCase().includes('operating properly') && confAdj<95) confAdj=95; cp.textContent = confAdj+'%'; }
+    if (note) note.textContent = r.confNote;
     const set = (id,val)=>{ const el=$(id); if(el) el.textContent = (val==null?'—':val+' °F'); };
     set('evapSat', r.details.evapSat); set('condSat', r.details.condSat); set('superheat', r.details.superheat); set('subcool', r.details.subcool);
     const dtEl=$('deltat'); if(dtEl) dtEl.textContent = (r.details.deltaT==null?'—':r.details.deltaT+' °F');
@@ -448,87 +366,65 @@
         list.appendChild(row);
       });
     }
-
-    const ns=$('nextSteps'); if(ns){ ns.innerHTML=''; r.steps.forEach(s=>{ const li=document.createElement('li'); li.textContent=s; ns.appendChild(li); }); }
-    const dbg = $('debugText');
-    if (dbg){
-      const d=r.input, det=r.details;
-      dbg.textContent = [
-        `Ref:${d.refrig} Type:${d.systemType}`,
-        `SP:${d.suctionP}psig ST:${d.suctionT}°F | LP:${d.liquidP}psig LT:${d.liquidT}°F`,
-        `EvapSat:${det.evapSat}°F CondSat:${det.condSat}°F | SH:${det.superheat}°F (tgt ${d.targetSH}) SC:${det.subcool}°F (tgt ${d.targetSC})`,
-        (det.deltaT!=null?`ΔT:${det.deltaT}°F (20 target)`: 'ΔT: — (SAT/RAT optional)'),
-        `Primary:${r.primary.cause} @ ${r.primary.pct}%`
-      ].join('\n');
-    }
-    updateBars(r.details);
     populateConfirmOptions(r);
   }
 
   function readInputs(){
     return {
-      refrig: ($('refrig')||{}).value || 'R410A', systemType: ($('systemType')||{}).value || 'txv',
-      indoorDb: toNum(($('indoorDb')||{}).value), indoorWb: toNum(($('indoorWb')||{}).value), outdoorDb: toNum(($('outdoorDb')||{}).value),
-      targetSH: toNum(($('targetSH')||{}).value) ?? 10, targetSC: toNum(($('targetSC')||{}).value) ?? 10,
-      suctionP: toNum(($('suctionP')||{}).value), suctionT: toNum(($('suctionT')||{}).value),
-      liquidP: toNum(($('liquidP')||{}).value), liquidT: toNum(($('liquidT')||{}).value),
-      supplyT: toNum(($('supplyT')||{}).value), returnT: toNum(($('returnT')||{}).value)
+      refrig: (document.getElementById('refrig')||{}).value || 'R410A', systemType: (document.getElementById('systemType')||{}).value || 'txv',
+      indoorDb: toNum((document.getElementById('indoorDb')||{}).value), indoorWb: toNum((document.getElementById('indoorWb')||{}).value), outdoorDb: toNum((document.getElementById('outdoorDb')||{}).value),
+      targetSH: toNum((document.getElementById('targetSH')||{}).value) ?? 10, targetSC: toNum((document.getElementById('targetSC')||{}).value) ?? 10,
+      suctionP: toNum((document.getElementById('suctionP')||{}).value), suctionT: toNum((document.getElementById('suctionT')||{}).value),
+      liquidP: toNum((document.getElementById('liquidP')||{}).value), liquidT: toNum((document.getElementById('liquidT')||{}).value),
+      supplyT: toNum((document.getElementById('supplyT')||{}).value), returnT: toNum((document.getElementById('returnT')||{}).value),
+      deltaTManual: toNum((document.getElementById('deltaTManual')||{}).value)
     };
   }
 
   function runDiagnose(){
     const d=readInputs();
-    if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional.'); return; }
+    if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp. SAT/RAT optional; manual ΔT optional.'); return; }
     const r = diagnoseAll(d); renderResults(r);
   }
 
   function initButtons(){
-    const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', runDiagnose);
-    const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
+    const diagBtn=document.getElementById('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', runDiagnose);
+    const saveBtn=document.getElementById('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3b', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3b+ΔT', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
-        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
-        suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:($('learningToggle')||{}).checked, testerInitials:'' };
+        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
+        suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:(document.getElementById('learningToggle')||{}).checked, testerInitials:'' };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
     });
-    const exportBtn=$('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
+    const exportBtn=document.getElementById('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
       const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
       const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-      const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","evapSat","condSat","superheat","subcool","deltaT","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials"];
+      const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","deltaTSource"];
       const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_3b.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_3b_dt.csv'; a.click();
     });
-    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_3b'); renderHist(); } });
+    const clearBtn=document.getElementById('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_3b_dt'); renderHist(); } });
 
-    // Confirm diagnosis logging
-    const confirmBtn = $('confirmBtn');
+    const confirmBtn = document.getElementById('confirmBtn');
     if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
-      const sel = $('confirmSelect');
+      const sel = document.getElementById('confirmSelect');
       if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d = readInputs();
       const r = diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3b', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3b+ΔT', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
-        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
-        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:($('learningToggle')||{}).checked, testerInitials:'' };
+        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
+        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:(document.getElementById('learningToggle')||{}).checked, testerInitials:'' };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist();
       alert('Confirmation recorded.');
     });
   }
 
   async function boot(){
-    await initRefrigerants();
-    // Populate select if empty (extreme fallback)
-    const sel=$('refrig');
-    if (sel && sel.options.length===0) {
-      ['R410A','R22','R32','R454B'].forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); PT[n]=PT_FALLBACK[n]; });
-      if (PT_BADGE) { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
-      sel.value='R410A';
-    }
     renderHist();
     initButtons();
   }
