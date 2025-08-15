@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#eaf2fb" />
 <style>
   :root{ --bg:#f6fafd; --bg2:#ffffff; --panel:#ffffff; --ink:#0a1e2e; --muted:#5a748a; --line:#dfeaf5; --accent:#2f7bff; --cool:#1d9df5; --hot:#ff6a3d; --meter:#31c48d; --soft:#edf4fb; --bad:#b00020; }
-  html,body{margin:0;height:100%;font-family:Inter,system-ui,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--ink)}
+  html,body{margin:0;height:100%;font-family:Inter,system-ui,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:#0a1e2e}
   .app{max-width:1200px;margin:18px auto;padding:18px}
   header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .logo{width:56px;height:56px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(30,100,200,0.12)}
@@ -40,10 +40,6 @@
   .legend i{display:inline-block;width:14px;height:10px;border-radius:3px}
   .badge{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:8px;font-size:11px;border:1px solid var(--line);color:#2b5b7a}
   .badge.bad{color:#fff;background:#b00020;border-color:#b00020}
-  .tips{font-size:13px;color:#2b5b7a;background:#f6fbff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
-  details summary{cursor:pointer;font-weight:800}
-  @media(max-width:980px){.main{grid-template-columns:1fr} input[type=number]{max-width:7ch}}
-  .cycleWrap{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;position:relative;overflow:hidden}
   #updateToast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#0a1e2e;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,0.2);display:none;z-index:9999}
   #updateToast button{margin-left:10px;border:0;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer}
   #debugPanel{display:none;margin-top:8px;font-size:12px;color:#24465f;background:#f1f7ff;border:1px dashed #cfe2f5;border-radius:10px;padding:10px}
@@ -55,7 +51,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.3a</span> <span id="ptBadge" class="badge">PT: —</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.3b</span> <span id="ptBadge" class="badge">PT: —</span></h1>
       <div style="font-size:12px;color:#5a748a;margin-top:4px">
         <label><input type="checkbox" id="learningToggle"> Enable Adaptive Learning</label>
         <span id="learnStats" class="badge" title="Learned tolerances">—</span>
@@ -86,26 +82,12 @@
       <hr style="margin:12px 0;border:0;border-top:1px solid var(--line)">
 
       <div class="section-title">Refrigerant Cycle</div>
-      <div class="cycleWrap">
-        <img src="/Hvac-troubleshooter-/assets/cycle_approved.webp?v=7.2.1-lite" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+      <div class="panel" style="padding:12px">
+        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/cycle_approved_v2.webp?v=7.3b" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)" onerror="this.onerror=null; this.src='/Hvac-troubleshooter-/assets/cycle_approved.webp?v=7.2.1-lite';">
         <div class="legend" style="margin-top:8px">
           <span>Low side</span><i style="background:var(--cool)"></i>
           <span>High side</span><i style="background:var(--hot)"></i>
           <span>Meter</span><i style="background:var(--meter)"></i>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
-          <div style="background:#eaf2fc;border:1px solid var(--line);border-radius:10px;padding:8px">
-            <div style="font-size:12px;color:#5a748a;font-weight:800">Low-Side Intensity</div>
-            <div id="lowSideBar" style="height:10px;background:#e8f2fc;border-radius:6px;overflow:hidden;margin-top:6px">
-              <i style="display:block;height:100%;width:0%"></i>
-            </div>
-          </div>
-          <div style="background:#fff3ef;border:1px solid var(--line);border-radius:10px;padding:8px">
-            <div style="font-size:12px;color:#7a3b2b;font-weight:800">High-Side Intensity</div>
-            <div id="highSideBar" style="height:10px;background:#ffe5db;border-radius:6px;overflow:hidden;margin-top:6px">
-              <i style="display:block;height:100%;width:0%"></i>
-            </div>
-          </div>
         </div>
         <div id="debugPanel"><pre id="debugText"></pre></div>
       </div>
@@ -180,7 +162,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build 7.3a · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
+    Build 7.3b · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
   </footer>
 </div>
 
@@ -188,7 +170,7 @@
 
 <script>
 (function(){
-  const BUILD_ID = '7.3a.0';
+  const BUILD_ID = '7.3b.0';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ const n=Number(v); return isNaN(n)?null:n; };
@@ -416,7 +398,7 @@
   });
 
   // History helpers
-  const HIST_KEY='hvac_hist_v7_3a';
+  const HIST_KEY='hvac_hist_v7_3b';
   const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
   const saveHist=(a)=> localStorage.setItem(HIST_KEY, JSON.stringify(a));
   function renderHist(){
@@ -468,7 +450,6 @@
     }
 
     const ns=$('nextSteps'); if(ns){ ns.innerHTML=''; r.steps.forEach(s=>{ const li=document.createElement('li'); li.textContent=s; ns.appendChild(li); }); }
-    // Debug panel content
     const dbg = $('debugText');
     if (dbg){
       const d=r.input, det=r.details;
@@ -506,7 +487,7 @@
     const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3a', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3b', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
@@ -518,9 +499,9 @@
       const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
       const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","evapSat","condSat","superheat","subcool","deltaT","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials"];
       const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_3a.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_3b.csv'; a.click();
     });
-    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_3a'); renderHist(); } });
+    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_3b'); renderHist(); } });
 
     // Confirm diagnosis logging
     const confirmBtn = $('confirmBtn');
@@ -529,7 +510,7 @@
       if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d = readInputs();
       const r = diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3a', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3b', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT,
