@@ -43,6 +43,8 @@
   #stickyActions{position:sticky;bottom:0;z-index:10;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);padding-top:8px}
   #updateToast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#0a1e2e;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,0.2);display:none;z-index:9999}
   #updateToast button{margin-left:10px;border:0;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer}
+  #whyModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
+  #whyCard{max-width:680px;margin:8% auto;background:#fff;border-radius:14px;border:1px solid #dfeaf5;padding:14px}
   #debugPanel{display:none;margin-top:8px;font-size:12px;color:#24465f;background:#f1f7ff;border:1px dashed #cfe2f5;border-radius:10px;padding:10px}
   #debugPanel pre{white-space:pre-wrap;margin:0}
   .preset-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -56,7 +58,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.3c</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.4</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
       <div class="tip">Manual ΔT is supported. If SAT &amp; RAT are provided, ΔT is calculated and used.</div>
     </div>
     <button id="installBtn">Install App</button>
@@ -75,8 +77,12 @@
           <select id="refrig"></select>
         </div>
         <div>
-          <label title="TXV: target subcool; Fixed: target superheat">System Type</label>
-          <select id="systemType"><option value="txv" selected>TXV (subcool)</option><option value="fixed">Fixed (superheat)</option></select>
+          <label title="TXV/EEV: target subcool; Fixed: target superheat">System Type</label>
+          <select id="systemType">
+            <option value="txv" selected>TXV (subcool)</option>
+            <option value="eev">EEV (electronic)</option>
+            <option value="fixed">Fixed (superheat)</option>
+          </select>
         </div>
         <div><label title="Dry-bulb">Indoor DB (°F)</label><input id="indoorDb" type="number" placeholder="75"></div>
         <div><label title="If available">Indoor WB (°F)</label><input id="indoorWb" type="number" placeholder="63"></div>
@@ -89,7 +95,7 @@
 
       <div class="section-title">Refrigerant Cycle</div>
       <div class="panel" style="padding:12px">
-        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=7.3c" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=7.4" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
         <div id="debugPanel"><pre id="debugText"></pre></div>
       </div>
 
@@ -133,6 +139,7 @@
           <div style="text-align:right">
             <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Confidence</div>
             <div id="confPct" style="font-size:22px;font-weight:900;color:#2f7bff">—%</div>
+            <button id="whyBtn" class="btn secondary" style="margin-top:6px;padding:6px 10px">Why?</button>
           </div>
         </div>
         <div id="confNote" style="margin-top:4px;color:#5a748a;font-size:12px"></div>
@@ -165,21 +172,32 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build 7.3c-full · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
+    Build 7.4 · On iPhone, use Safari → Share → Add to Home Screen. On Android, tap Install App or browser menu. Works offline after first load.
   </footer>
 </div>
 
 <div id="updateToast">New version available — tap to refresh <button id="refreshBtn">Refresh</button></div>
 
+<!-- Reasoning Modal -->
+<div id="whyModal">
+  <div id="whyCard">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>Why this diagnosis?</strong>
+      <button id="whyClose" class="btn secondary" style="padding:6px 10px">Close</button>
+    </div>
+    <div id="whyContent" style="margin-top:8px;font-size:14px;color:#0a1e2e"></div>
+  </div>
+</div>
+
 <script>
 (function(){
-  const BUILD_ID = '7.3c.full.1';
+  const BUILD_ID = '7.4.0';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ const n=Number(v); return isNaN(n)?null:n; };
   const round1 = (n)=> n==null?null:Math.round(n*10)/10;
 
-  // Tolerances (slightly wider per feedback)
+  // Tolerances (slightly wider)
   const BASE_TOL = { sh:4, sc:4, evap:4, dt:5 };
   const TARGETS = { evapSat:40, deltaT:20 };
 
@@ -266,32 +284,52 @@
       deltaT: deltaT==null?null:round1(deltaT), deltaTSource
     };
 
-    let causes = {'Undercharge (low refrigerant)':8,'Overcharge (too much refrigerant)':6,'Restriction — metering device / drier':6,'Low airflow across evaporator':6,'Non-condensables (air in system)':4,'Compressor mechanical issue (valves/leak)':4,'Equipment mismatch (ODU>IDU)':4,'TXV overfeeding (adjust superheat)':0};
+    // Base causes
+    let causes = {'Undercharge (low refrigerant)':8,'Overcharge (too much refrigerant)':6,'Restriction — metering device / drier':6,'Low airflow across evaporator':6,'Non-condensables (air in system)':4,'Compressor mechanical issue (valves/leak)':4,'Equipment mismatch (ODU>IDU)':4,'TXV overfeeding (adjust superheat)':0,'TXV underfeeding (adjust superheat)':0,'EEV overfeeding (check control/sensors)':0,'EEV underfeeding (check control/sensors)':0};
 
-    if(d.systemType==='txv' && det.superheat!=null && d.targetSH!=null){
+    const rules = [];
+
+    // TXV/EEV hints when others OK
+    const othersOK = (det.subcool!=null && Math.abs(det.subcool - d.targetSC) <= BASE_TOL.sc) &&
+                     (det.evapSat!=null && Math.abs(det.evapSat - 40) <= BASE_TOL.evap) &&
+                     (det.deltaT==null || Math.abs(det.deltaT - 20) <= BASE_TOL.dt);
+
+    if((d.systemType==='txv' || d.systemType==='eev') && det.superheat!=null && d.targetSH!=null && othersOK){
       const shErr = det.superheat - d.targetSH;
-      const othersOK = (det.subcool!=null && Math.abs(det.subcool - d.targetSC) <= BASE_TOL.sc) && (det.evapSat!=null && Math.abs(det.evapSat - 40) <= BASE_TOL.evap) && (det.deltaT==null || Math.abs(det.deltaT - 20) <= BASE_TOL.dt);
-      if(shErr < -BASE_TOL.sh && othersOK) causes['TXV overfeeding (adjust superheat)'] += 20;
+      if (shErr < -BASE_TOL.sh){
+        rules.push('Low SH with SC/Evap/ΔT near target ⇒ overfeeding');
+        if(d.systemType==='eev'){ causes['EEV overfeeding (check control/sensors)'] += 22; }
+        else { causes['TXV overfeeding (adjust superheat)'] += 22; }
+      } else if (shErr > BASE_TOL.sh){
+        rules.push('High SH with SC/Evap/ΔT near target ⇒ underfeeding');
+        if(d.systemType==='eev'){ causes['EEV underfeeding (check control/sensors)'] += 22; }
+        else { causes['TXV underfeeding (adjust superheat)'] += 22; }
+      }
     }
 
+    // Charge / restriction rules
     if(det.superheat!=null && d.targetSH!=null){
       const ds = det.superheat - d.targetSH;
-      if(ds >= 6){ causes['Undercharge (low refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; }
-      else if(ds <= -6){ causes['Overcharge (too much refrigerant)'] += 12; causes['Restriction — metering device / drier'] += 4; }
+      if(ds >= 6){ causes['Undercharge (low refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; rules.push('High SH suggests underfeed/undercharge or restriction'); }
+      else if(ds <= -6){ causes['Overcharge (too much refrigerant)'] += 12; causes['Restriction — metering device / drier'] += 4; rules.push('Low SH suggests overfeed/overcharge'); }
     }
     if(det.subcool!=null && d.targetSC!=null){
       const dc = det.subcool - d.targetSC;
-      if(dc >= 6){ causes['Overcharge (too much refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; }
-      else if(dc <= -4){ causes['Undercharge (low refrigerant)'] += 12; }
+      if(dc >= 6){ causes['Overcharge (too much refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; rules.push('High SC suggests overcharge or condenser flooding'); }
+      else if(dc <= -4){ causes['Undercharge (low refrigerant)'] += 12; rules.push('Low SC suggests undercharge or flashing'); }
     }
     if(d.suctionP!=null && d.liquidP!=null){
-      if(d.suctionP < 105 && d.liquidP < 320) causes['Undercharge (low refrigerant)'] += 12;
-      if(d.suctionP < 105 && d.liquidP > 380){ causes['Low airflow across evaporator'] += 10; causes['Non-condensables (air in system)'] += 8; }
-      if(d.suctionP > 160 && d.liquidP < 330) causes['Compressor mechanical issue (valves/leak)'] += 16;
-      if(d.suctionP > 160 && d.liquidP > 480){ causes['Overcharge (too much refrigerant)'] += 10; causes['Non-condensables (air in system)'] += 8; }
+      if(d.suctionP < 105 && d.liquidP < 320){ causes['Undercharge (low refrigerant)'] += 12; rules.push('Low low-side & low high-side ⇒ likely undercharge'); }
+      if(d.suctionP < 105 && d.liquidP > 380){ causes['Low airflow across evaporator'] += 10; causes['Non-condensables (air in system)'] += 8; rules.push('Low suction + high head ⇒ airflow issue or non-condensables'); }
+      if(d.suctionP > 160 && d.liquidP < 330){ causes['Compressor mechanical issue (valves/leak)'] += 16; rules.push('High suction + normal/low head ⇒ compressor valves/leak'); }
+      if(d.suctionP > 160 && d.liquidP > 480){ causes['Overcharge (too much refrigerant)'] += 10; causes['Non-condensables (air in system)'] += 8; rules.push('High suction + very high head ⇒ overcharge or air'); }
     }
-    if(det.deltaT!=null){ if(det.deltaT < 12) causes['Low airflow across evaporator'] += 18; else if(det.deltaT > 28) causes['Low airflow across evaporator'] += 8; }
+    if(det.deltaT!=null){
+      if(det.deltaT < 12){ causes['Low airflow across evaporator'] += 18; rules.push('ΔT < 12°F ⇒ airflow/latent load issue first'); }
+      else if(det.deltaT > 28){ causes['Low airflow across evaporator'] += 8; rules.push('ΔT > 28°F ⇒ check airflow / oversized ODU-small IDU'); }
+    }
 
+    // Rank and confidence
     let ranked = Object.keys(causes).map(k=>({cause:k,score:causes[k]})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
     const nearOk = (det.evapSat!=null && Math.abs(det.evapSat-40)<=BASE_TOL.evap) &&
                    (det.superheat!=null && d.targetSH!=null && Math.abs(det.superheat-d.targetSH)<=BASE_TOL.sh) &&
@@ -303,16 +341,21 @@
     const conf = computeConfidence(det, d, BASE_TOL);
     const primary = ranked[0] ? {cause: ranked[0].cause, pct: conf} : {cause:'Insufficient data', pct:0};
 
-    // Confidence note
-    let noteBits = [];
-    if (det.deltaT==null) noteBits.push('ΔT missing (enter manual or SAT/RAT)');
-    else noteBits.push(det.deltaTSource==='manual' ? 'ΔT provided by tech' : 'ΔT computed from SAT/RAT');
-    if (det.superheat!=null && d.targetSH!=null && Math.abs(det.superheat-d.targetSH)<=BASE_TOL.sh) noteBits.push('SH near target');
-    if (det.subcool!=null && d.targetSC!=null && Math.abs(det.subcool-d.targetSC)<=BASE_TOL.sc) noteBits.push('SC near target');
-    if (det.evapSat!=null && Math.abs(det.evapSat-40)<=BASE_TOL.evap) noteBits.push('Evap sat near 40°F');
-    const confNote = noteBits.join(' • ');
-
-    return {details:det, ranked, primary, steps:[], input:d, confNote};
+    // Valve note (final)
+    let valveNote = '';
+    if((d.systemType==='txv' || d.systemType==='eev') && det.superheat!=null && d.targetSH!=null && othersOK){
+      const shErr = det.superheat - d.targetSH;
+      if (shErr < -BASE_TOL.sh){
+        valveNote = (d.systemType==='eev')
+          ? 'EEV likely overfeeding: verify suction temp/pressure sensors & controller setpoint; re-home stepper if needed.'
+          : 'TXV likely overfeeding: reduce superheat slightly (¼–½ turn), verify bulb placement and insulation.';
+      } else if (shErr > BASE_TOL.sh){
+        valveNote = (d.systemType==='eev')
+          ? 'EEV likely underfeeding: check sensors, look for restriction ahead of valve, verify control signal/steps.'
+          : 'TXV likely underfeeding: increase superheat slightly, check inlet screen/drier restriction.';
+      }
+    }
+    return {details:det, ranked, primary, steps:[], input:d, confNote:'', rulesFired:rules, valveNote};
   }
 
   function reasoningLines(det, d){
@@ -326,7 +369,7 @@
   }
 
   // History helpers
-  const HIST_KEY='hvac_hist_v7_3c_full';
+  const HIST_KEY='hvac_hist_v7_4';
   const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
   const saveHist=(a)=> localStorage.setItem(HIST_KEY, JSON.stringify(a));
   function renderHist(){
@@ -359,7 +402,15 @@
     const pf=$('primaryFault'), cp=$('confPct'), note=$('confNote');
     if (pf) pf.textContent = r.primary.cause;
     if (cp) { let confAdj=r.primary.pct||0; if(r.primary.cause.toLowerCase().includes('operating properly') && confAdj<95) confAdj=95; cp.textContent = confAdj+'%'; }
-    if (note) note.textContent = r.confNote;
+    if (note) {
+      const noteBits = [];
+      if (r.details.deltaT==null) noteBits.push('ΔT missing (enter manual or SAT/RAT)');
+      else noteBits.push(r.details.deltaTSource==='manual' ? 'ΔT provided by tech' : 'ΔT computed from SAT/RAT');
+      if (r.details.superheat!=null && r.input.targetSH!=null && Math.abs(r.details.superheat-r.input.targetSH)<=BASE_TOL.sh) noteBits.push('SH near target');
+      if (r.details.subcool!=null && r.input.targetSC!=null && Math.abs(r.details.subcool-r.input.targetSC)<=BASE_TOL.sc) noteBits.push('SC near target');
+      if (r.details.evapSat!=null && Math.abs(r.details.evapSat-40)<=BASE_TOL.evap) noteBits.push('Evap sat near 40°F');
+      note.textContent = noteBits.join(' • ');
+    }
     const set = (id,val)=>{ const el=$(id); if(el) el.textContent = (val==null?'—':val+' °F'); };
     set('evapSat', r.details.evapSat); set('condSat', r.details.condSat); set('superheat', r.details.superheat); set('subcool', r.details.subcool);
     const dtEl=$('deltat'); if(dtEl) dtEl.textContent = (r.details.deltaT==null?'—':r.details.deltaT+' °F');
@@ -377,7 +428,46 @@
       });
     }
     populateConfirmOptions(r);
+
+    // Wire Why? modal with this result
+    const whyBtn = $('whyBtn'), modal = $('whyModal'), closeBtn = $('whyClose');
+    if (whyBtn && modal && closeBtn){
+      whyBtn.onclick = ()=>{
+        const lines = reasoningLines(r.details, r.input);
+        const rules = (r.rulesFired||[]).map(x=>`<li>${x}</li>`).join('') || '<li>(no major rule triggers)</li>';
+        const ptNote = (r.details && (r.details.evapSat!=null || r.details.condSat!=null))
+          ? '<em>Sat temps derived from PT interpolation.</em>' : '';
+        const valve = r.valveNote ? `<div style="margin-top:8px;padding:8px;border-radius:10px;background:#f6fbff;border:1px solid #dfeaf5"><strong>Valve note:</strong> ${r.valveNote}</div>` : '';
+        $('whyContent').innerHTML =
+          `<div><strong>Numbers used</strong><ul>${lines.map(s=>`<li>${s}</li>`).join('')}</ul></div>
+           <div style="margin-top:8px"><strong>Rules that influenced this result</strong><ul>${rules}</ul>${ptNote}</div>${valve}`;
+        modal.style.display='block';
+      };
+      closeBtn.onclick = ()=> modal.style.display='none';
+      modal.onclick = (e)=>{ if(e.target===modal) modal.style.display='none'; };
+    }
   }
+
+  // Copy metrics to clipboard on tap
+  function enableMetricCopy(){
+    document.querySelectorAll('.metric').forEach(m=>{
+      const targetSel = m.getAttribute('data-copy');
+      if(!targetSel) return;
+      m.addEventListener('click', ()=>{
+        const el = document.querySelector(targetSel);
+        if(!el) return;
+        const txt = el.textContent.replace(' °F','');
+        if (navigator.clipboard) navigator.clipboard.writeText(txt);
+        m.style.boxShadow = '0 0 0 2px rgba(47,123,255,0.4)';
+        setTimeout(()=> m.style.boxShadow='none', 250);
+      });
+    });
+  }
+
+  // History helpers
+  const HIST_KEY='hvac_hist_v7_4';
+  const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
+  const saveHist=(a)=> localStorage.setItem(HIST_KEY, JSON.stringify(a));
 
   function readInputs(){
     return {
@@ -397,42 +487,27 @@
     const r = diagnoseAll(d); renderResults(r);
   }
 
-  // Copy metrics to clipboard on tap
-  function enableMetricCopy(){
-    document.querySelectorAll('.metric').forEach(m=>{
-      const targetSel = m.getAttribute('data-copy');
-      if(!targetSel) return;
-      m.addEventListener('click', ()=>{
-        const el = document.querySelector(targetSel);
-        if(!el) return;
-        const txt = el.textContent.replace(' °F','');
-        navigator.clipboard && navigator.clipboard.writeText(txt);
-        m.style.boxShadow = '0 0 0 2px rgba(47,123,255,0.4)';
-        setTimeout(()=> m.style.boxShadow='none', 250);
-      });
-    });
-  }
-
   function initButtons(){
     const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', runDiagnose);
     const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3c-full', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.4', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
-        suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'' };
+        suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'',
+        rulesFired:(r.rulesFired||[]).join(' | '), valveNote:r.valveNote||'' };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
     });
     const exportBtn=$('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
       const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
-      const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[\",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-      const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","deltaTSource"];
-      const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_3c_full.csv'; a.click();
+      const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[\\",\\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+      const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","deltaTSource","rulesFired","valveNote"];
+      const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_4.csv'; a.click();
     });
-    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_3c_full'); renderHist(); } });
+    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_4'); renderHist(); } });
 
     const confirmBtn = $('confirmBtn');
     if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
@@ -440,11 +515,12 @@
       if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d = readInputs();
       const r = diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.3c-full', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v7.4', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
-        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:true, testerInitials:'' };
+        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:true, testerInitials:'',
+        rulesFired:(r.rulesFired||[]).join(' | '), valveNote:r.valveNote||'' };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist();
       alert('Confirmation recorded.');
     });
