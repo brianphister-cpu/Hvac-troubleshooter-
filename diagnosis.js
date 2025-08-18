@@ -1,0 +1,1 @@
+// Fixed delta T manual entry and always enabled adaptive learning
