@@ -3,8 +3,8 @@
 // Adds a Send Report button to v7.4b that emails the CSV through your Vercel relay
 
 const RELAY_URL     = 'https://hvac-email-relay.vercel.app/api/sendCsv';
-const REPORT_TO     = 'you@yourcompany.com';   // change to your email
-const SHARED_SECRET = '';                      // optional shared secret
+const REPORT_TO     = 'brianphister@gmail.com';   // change to your email
+const SHARED_SECRET = 'Axpquvxp';                      // optional shared secret
 
 function addSendReportButton() {
   const exportBtn = document.querySelector('button#exportCsv') ||
