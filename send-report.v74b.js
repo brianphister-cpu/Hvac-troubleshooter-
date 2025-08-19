@@ -6,8 +6,8 @@
 
   // EDIT THESE
   const RELAY_URL     = 'https://hvac-email-relay.vercel.app/api/sendCsv';
-  const REPORT_TO     = 'you@yourcompany.com';   // <- your email
-  const SHARED_SECRET = '';                      // <- your secret if you use one
+  const REPORT_TO     = 'Brianphister@gmail.com.com';   // <- your email
+  const SHARED_SECRET = 'Axpquvxp';                      // <- your secret if you use one
 
   function onReady(fn){
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
