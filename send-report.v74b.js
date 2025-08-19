@@ -1,8 +1,8 @@
 // send-report.v74b.js
 document.addEventListener('DOMContentLoaded', () => {
   const RELAY_URL     = 'https://hvac-email-relay.vercel.app/api/sendCsv';
-  const REPORT_TO     = 'you@yourcompany.com'; // replace with your email
-  const SHARED_SECRET = ''; // optional secret
+  const REPORT_TO     = 'brianphister@gmail.com'; // replace with your email
+  const SHARED_SECRET = 'Axpquvxp'; // optional secret
 
   function addSendButton() {
     const csvBtn = document.querySelector('button#exportCsv') || document.querySelector('button');
