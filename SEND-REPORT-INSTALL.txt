@@ -1,0 +1,10 @@
+This package was updated to include a 'Send Report' button inside the History box, next to the Export CSV button.
+No other files were changed except:
+  - index.html: added one line to load send-report.v74b.smart.js at the end of the body
+  - send-report.v74b.smart.js: new file
+
+Before using, open send-report.v74b.smart.js and set:
+  const REPORT_TO     = 'you@yourcompany.com'; // <-- set your email address
+  const SHARED_SECRET = '';                    // <-- set if your relay requires it
+
+Everything else (refrigerant list, Diagnose, ΔT rules, PT, cycle diagram) remains unchanged.
