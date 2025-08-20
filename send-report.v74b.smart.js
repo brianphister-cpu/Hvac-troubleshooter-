@@ -1,47 +1,43 @@
-/*! send-report.v74b.js
- * Safe add-only patch for v7.4e
- * Adds a "Send Report" button inside the History controls
- */
-
+<!-- send-report.v74b.js -->
+<script>
+/*! v7.4e safe patch: Send Report integration */
 (() => {
   'use strict';
 
-  // Function to gather CSV data from local history
-  function buildCsvFromHistory() {
-    const history = JSON.parse(localStorage.getItem('hvac_history') || '[]');
-    if (!history.length) return null;
+  // 🔧 CONFIG — CHANGE THESE
+  const REPORT_EMAIL = "brianphister@gmail.com";   // <-- replace with YOUR email
+  const SHARED_SECRET = "Axpquvxp"; // <-- replace with secret you set in relay
 
-    // Build CSV header from object keys
-    const headers = Object.keys(history[0]);
-    const rows = history.map(entry => headers.map(h => entry[h] ?? "").join(","));
-    return [headers.join(","), ...rows].join("\n");
+  const RELAY_URL = "https://hvac-email-relay.vercel.app/api/sendCsv";
+
+  // Small toast popup instead of alerts
+  function showToast(msg, isError=false) {
+    const toast = document.createElement("div");
+    toast.textContent = msg;
+    toast.style.position = "fixed";
+    toast.style.bottom = "10px";
+    toast.style.right = "10px";
+    toast.style.background = isError ? "#b00020" : "#4caf50";
+    toast.style.color = "white";
+    toast.style.padding = "8px 12px";
+    toast.style.borderRadius = "6px";
+    toast.style.zIndex = 10000;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
   }
 
-  // Function to send CSV to relay
-  async function sendCsvToRelay() {
-    const csv = buildCsvFromHistory();
-    if (!csv) {
-      alert("No report data found.");
-      return;
-    }
+  // Add button into History box beside Export
+  function addSendButton() {
+    const historyControls = document.querySelector("#history-controls");
+    if (!historyControls) return;
 
-    try {
-      const resp = await fetch("https://hvac-email-relay.vercel.app/api/sendCsv", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          csv, 
-          // always send to you – relay backend handles actual email send
-          to: "brianphister@gmail.com",  
-          subject: "HVAC Report Export",
-        }),
-      });
+    if (document.querySelector("#send-report-btn")) return; // prevent duplicates
 
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(text || "Relay error");
-      }
+    const btn = document.createElement("button");
+    btn.id = "send-report-btn";
+    btn.textContent = "Send Report";
+    btn.className = "btn btn-secondary";
+    btn.style.marginLeft = "6px";
 
-      alert("Report sent successfully!");
-    } catch (err) {
-      console.error("Send report failed
+    btn.addEventListener("click", sendReport);
+    history
