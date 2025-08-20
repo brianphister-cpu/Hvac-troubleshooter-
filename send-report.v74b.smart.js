@@ -3,8 +3,8 @@
   'use strict';
   // === CONFIG ===
   const RELAY_URL     = 'https://hvac-email-relay.vercel.app/api/sendCsv';
-  const REPORT_TO     = 'you@yourcompany.com';   // TODO: set to your email
-  const SHARED_SECRET = '';                      // set if your relay requires it
+  const REPORT_TO     = 'brianphister@gmail.com';   // TODO: set to your email
+  const SHARED_SECRET = 'Axpquvxp';                      // set if your relay requires it
   // ==============
 
   function onReady(fn){
