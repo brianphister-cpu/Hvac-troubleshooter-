@@ -4,8 +4,8 @@
 
   // EDIT THESE
   const RELAY_URL     = 'https://hvac-email-relay.vercel.app/api/sendCsv';
-  const REPORT_TO     = 'you@yourcompany.com';     // your email
-  const SHARED_SECRET = '';                        // your relay secret if used
+  const REPORT_TO     = 'brianphister@gmail.com';     // your email
+  const SHARED_SECRET = 'Axpquvxp';                        // your relay secret if used
 
   // ----- CSV sourcing (unchanged, robust) -----
   function pickKeys(rows){
