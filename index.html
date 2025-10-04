@@ -59,7 +59,7 @@
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
       <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v7.4f</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
-      <div class="tip">Please use tool to diagnose issues, confirm which diagnosis is correct and send click Send Report to share data with Administrator. </div>
+      <div class="tip">Please use tool to diagnose issues, confirm which diagnosis is correct and click Send Report to share data with Administrator.</div>
     </div>
     <button id="installBtn">Install App</button>
   </header>
@@ -173,7 +173,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build 7.4e · Hotfix: calculated ΔT uses SAT/RAT when manual is blank · Fixes manual ΔT precedence only. Everything else unchanged from v7.4b.
+    Build v7.4f · Hotfix: calculated ΔT uses SAT/RAT when manual is blank · Fixes manual ΔT precedence only. Everything else unchanged from v7.4b.
   </footer>
 </div>
 
@@ -192,11 +192,20 @@
 
 <script>
 (function(){
-  const BUILD_ID = '7.4c';
-  const SUBPATH = '/Hvac-troubleshooter-/';
+  // ========= Version unification (no functional changes) =========
+  const APP_VERSION = '7.4f';                         // single source of truth
+  const BUILD_ID    = APP_VERSION;                    // cache-busting tag for PT fetches
+  const STORAGE_KEY = `hvac_hist_v${APP_VERSION.replace(/\./g,'_')}`;
+  const CSV_NAME    = `hvac_history_v${APP_VERSION}.csv`;
+  const SUBPATH     = '/Hvac-troubleshooter-/';
+  // ===============================================================
+
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return isNaN(n)?null:n; };
   const round1 = (n)=> n==null?null:Math.round(n*10)/10;
+
+  // Paint version badge without changing anything else
+  const vb = $('versionBadge'); if (vb) vb.textContent = `v${APP_VERSION}`;
 
   const BASE_TOL = { sh:4, sc:4, evap:4, dt:5 };
   const TARGETS = { evapSat:40, deltaT:20 };
@@ -383,7 +392,8 @@
     return lines;
   }
 
-  const HIST_KEY='hvac_hist_v7_4b'; // keep storage key for continuity
+  // === History (keys/filenames now track APP_VERSION; behavior unchanged) ===
+  const HIST_KEY = STORAGE_KEY;
   const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
   const saveHist=(a)=> localStorage.setItem(HIST_KEY, JSON.stringify(a));
 
@@ -500,7 +510,7 @@
     const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.4e', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v'+APP_VERSION, refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
@@ -513,9 +523,9 @@
       const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[\\",\\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
       const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","deltaTSource","rulesFired","valveNote"];
       const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v7_4c.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=CSV_NAME; a.click();
     });
-    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_4b'); renderHist(); } });
+    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } });
 
     const confirmBtn = $('confirmBtn');
     if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
@@ -523,7 +533,7 @@
       if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d = readInputs();
       const r = diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v7.4e', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v'+APP_VERSION, refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
@@ -561,3 +571,4 @@
   
 </body>
 </html>
+
