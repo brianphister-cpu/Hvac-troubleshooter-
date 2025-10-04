@@ -1,4 +1,5 @@
-// send-report.v74b.unified.js
+// send-report.v74b.unified.js (placeholder)
+// Keep or replace with your existing file. This placeholder ensures the <script> reference doesn't 404.
 (() => {
-  console.log('Placeholder for send-report relay script. Replace with your existing version.');
+  // no-op
 })();
