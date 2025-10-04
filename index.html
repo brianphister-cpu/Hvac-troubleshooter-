@@ -43,6 +43,12 @@
   #whyModal,#coachModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
   #whyCard,#coachCard{max-width:900px;margin:6% auto;background:#fff;border-radius:14px;border:1px solid #dfeaf5;padding:14px}
   #coachCard{max-width:720px}
+
+  /* Compare table */
+  #comparePanel { margin-top: 10px; }
+  table.compare { width:100%; border-collapse:collapse; font-size:13px }
+  table.compare th, table.compare td { border:1px solid var(--line); padding:6px; text-align:center }
+  table.compare th { background:#f3f8ff }
 </style>
 </head>
 <body>
@@ -50,7 +56,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.2</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.3</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
       <div class="tip"><strong>Please use tool to diagnose issues, confirm which diagnosis is correct and click “Send Report” to share data with Administrator.</strong></div>
     </div>
     <button id="installBtn">Install App</button>
@@ -83,7 +89,7 @@
 
       <div class="section-title">Refrigerant Cycle</div>
       <div class="panel" style="padding:12px">
-        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.2" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.3" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
       </div>
 
       <div class="section-title">Field Readings</div>
@@ -105,6 +111,23 @@
         <div><label>Delta T (°F) — manual</label><input id="deltaTManual" type="number" placeholder="optional"></div>
       </div>
 
+      <div class="section-title">Case & Snapshot</div>
+      <div class="form-grid two-col">
+        <div><label>Case ID</label><input id="caseId" placeholder="e.g., 24-1007-A"></div>
+        <div>
+          <label>Snapshot Label</label>
+          <select id="snapshotLabel">
+            <option value="t0" selected>t0 (baseline)</option>
+            <option value="t+10">t+10</option>
+            <option value="t+20">t+20</option>
+            <option value="other">other…</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><label>Custom Snapshot (if "other")</label><input id="snapshotOther" placeholder="e.g., post-cleaning"></div>
+      </div>
+
       <div id="stickyActions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
         <button class="btn primary" id="diagBtn">Diagnose</button>
         <button class="btn secondary" id="coachBtn" title="Next-Best-Action coach">Coach</button>
@@ -113,6 +136,13 @@
           <option value="">— Optional: Confirm diagnosis (logs to CSV) —</option>
         </select>
         <button class="btn secondary" id="confirmBtn">Confirm</button>
+        <button class="btn secondary" id="compareBtn" title="Compare snapshots in this Case ID">Compare Case</button>
+      </div>
+
+      <div id="comparePanel" class="panel" style="display:none;padding:12px">
+        <div class="section-title">Case Compare</div>
+        <div id="compareSummary" class="tip"></div>
+        <div id="compareTableWrap"></div>
       </div>
     </div>
 
@@ -161,7 +191,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build <strong>v8.0.2</strong> · Confidence alignment · Coach modal fixed · Excel‑friendly CSV · No behavior changes to diagnosis logic.
+    Build <strong>v8.0.3</strong> · Confidence alignment · Coach modal fixed · Excel‑friendly CSV · Case ID & Snapshot labels · Case Compare panel.
   </footer>
 </div>
 
@@ -189,7 +219,7 @@
 
 <script>
 (function(){
-  const BUILD_ID = '8.0.2';
+  const BUILD_ID = '8.0.3';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return isNaN(n)?null:n; };
@@ -252,7 +282,7 @@
     return null;
   }
 
-  function computeConfidence(det, d, TOL){ // informational only
+  function computeConfidence(det, d, TOL){
     let score=0,max=0;
     max+=40;
     if(det.superheat!=null && d.targetSH!=null) score += Math.max(0, 24*(1 - Math.min(Math.abs(det.superheat-d.targetSH)/(TOL.sh*2),1)));
@@ -434,6 +464,13 @@
     }
   }
 
+  function currentSnapshotLabel(){
+    const sel = $('snapshotLabel'); const other = $('snapshotOther');
+    if (!sel) return '';
+    if (sel.value === 'other') return (other && other.value.trim()) ? other.value.trim() : 'other';
+    return sel.value;
+  }
+
   function readInputs(){
     return {
       refrig: ($('refrig')||{}).value || 'R410A', systemType: ($('systemType')||{}).value || 'txv',
@@ -442,7 +479,9 @@
       suctionP: toNum(($('suctionP')||{}).value), suctionT: toNum(($('suctionT')||{}).value),
       liquidP: toNum(($('liquidP')||{}).value), liquidT: toNum(($('liquidT')||{}).value),
       supplyT: toNum(($('supplyT')||{}).value), returnT: toNum(($('returnT')||{}).value),
-      deltaTManual: toNum(($('deltaTManual')||{}).value)
+      deltaTManual: toNum(($('deltaTManual')||{}).value),
+      caseId: (($('caseId')||{}).value||'').trim(),
+      snapshotLabel: currentSnapshotLabel()
     };
   }
 
@@ -452,46 +491,121 @@
     list.innerHTML='';
     a.forEach((h,i)=>{
       const d=document.createElement('div'); d.className='hist';
-      d.innerHTML = `<div><strong>${h.refrig||''}</strong> · ${h.time||''}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP||''} ST:${h.suctionT||''} · LP:${h.liquidP||''} LT:${h.liquidT||''} · ΔT:${h.deltaT??'—'} (${h.deltaTSource||'—'}) · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct||0}%</span></div>`;
+      d.innerHTML = `<div><strong>${h.refrig||''}</strong> · ${h.time||''} · <em>${h.caseId||'—'}/${h.snapshotLabel||'—'}</em><br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP||''} ST:${h.suctionT||''} · LP:${h.liquidP||''} LT:${h.liquidT||''} · ΔT:${h.deltaT??'—'} (${h.deltaTSource||'—'}) · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct||0}%</span></div>`;
       const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
       del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); };
       d.appendChild(del); list.appendChild(d);
     });
   }
 
+  function loadHist(){ try{return JSON.parse(localStorage.getItem('hvac_hist_v7_4b')||'[]');}catch(e){return []} }
+  function saveHist(a){ localStorage.setItem('hvac_hist_v7_4b', JSON.stringify(a)); }
+
+  function buildCompareTable(rows){
+    const cols = [
+      ['snapshot','Snapshot'],
+      ['time','Time'],
+      ['suctionP','Suction P (psig)'],
+      ['liquidP','Liquid P (psig)'],
+      ['evapSat','Evap Sat (°F)'],
+      ['condSat','Cond Sat (°F)'],
+      ['superheat','Superheat (°F)'],
+      ['subcool','Subcool (°F)'],
+      ['deltaT','ΔT (°F)'],
+      ['suggestedDiagnosis','Suggested'],
+      ['actualDiagnosis','Confirmed'],
+      ['confPct','Conf (%)']
+    ];
+    const header = '<tr>' + cols.map(c=>`<th>${c[1]}</th>`).join('') + '</tr>';
+    const body = rows.map(r=>{
+      const snap = r.snapshotLabel || '—';
+      const vals = {
+        snapshot: snap,
+        time: r.time || '—',
+        suctionP: r.suctionP ?? '—',
+        liquidP: r.liquidP ?? '—',
+        evapSat: r.evapSat ?? '—',
+        condSat: r.condSat ?? '—',
+        superheat: r.superheat ?? '—',
+        subcool: r.subcool ?? '—',
+        deltaT: r.deltaT ?? '—',
+        suggestedDiagnosis: r.suggestedDiagnosis || '—',
+        actualDiagnosis: r.actualDiagnosis || '—',
+        confPct: r.confPct ?? '—'
+      };
+      return '<tr>' + cols.map(c=>`<td>${vals[c[0]]}</td>`).join('') + '</tr>';
+    }).join('');
+    return '<table class="compare">'+header+body+'</table>';
+  }
+
   function initButtons(){
-    const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp.'); return; } const r=diagnoseAll(d); renderResults(r); });
-    const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; } const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.2', refrig:d.refrig, systemType:d.systemType,
+    const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', ()=>{
+      const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp.'); return; }
+      const r=diagnoseAll(d); renderResults(r);
+    });
+
+    const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
+      const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
+      const r=diagnoseAll(d);
+      const entry = {
+        time: new Date().toLocaleString(), appVersion:'v8.0.3', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
         suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'',
-        rulesFired:(r.rulesFired||[]).join(' | ') };
+        rulesFired:(r.rulesFired||[]).join(' | '),
+        caseId: d.caseId || '',
+        snapshotLabel: d.snapshotLabel || ''
+      };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
     });
+
     const exportBtn=$('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
       const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
       const esc=(v)=>{ if(v==null) return ''; const s=String(v); return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-      const order=["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","deltaTSource","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","rulesFired"];
+      const order=["time","appVersion","caseId","snapshotLabel","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","deltaTSource","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","rulesFired"];
       const header=order.join(','); const body=rows.map(r=>order.map(k=>esc(r[k])).join(',')).join('\r\n'); const csv='\ufeff'+header+'\r\n'+body;
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8.0.2.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_0_3.csv'; a.click();
     });
-    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } });
+
+    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_4b'); renderHist(); } });
 
     const confirmBtn = $('confirmBtn');
     if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
       const sel = $('confirmSelect');
       if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d=readInputs(); const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.2', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.3', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
-        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:true, testerInitials:'', rulesFired:(r.rulesFired||[]).join(' | ') };
-      const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist();
-      alert('Confirmation recorded.');
+        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:true, testerInitials:'', rulesFired:(r.rulesFired||[]).join(' | '),
+        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || '' };
+      const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist(); alert('Confirmation recorded.');
     });
+
+    // Compare
+    const compareBtn = $('compareBtn');
+    if (compareBtn) compareBtn.addEventListener('click', ()=>{
+      const caseInput = ($('caseId')||{}).value||'';
+      if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
+      const all = loadHist().filter(r=> (r.caseId||'').trim() === caseInput.trim());
+      if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
+      const labelOrder = {'t0':0,'t+10':1,'t+20':2};
+      all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
+      const html = buildCompareTable(all);
+      $('compareTableWrap').innerHTML = html;
+      $('compareSummary').textContent = `Comparing ${all.length} snapshot(s) for Case ${caseInput}`;
+      $('comparePanel').style.display='block';
+    });
+
+    // Why modal close
+    const whyModal = $('whyModal'), whyClose = $('whyClose');
+    if (whyModal && whyClose){ 
+      whyClose.onclick = ()=> whyModal.style.display='none';
+      whyModal.onclick = (e)=>{ if(e.target===whyModal) whyModal.style.display='none'; };
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && whyModal.style.display==='block') whyModal.style.display='none'; });
+    }
 
     // Coach button
     const coachBtn = $('coachBtn');
