@@ -193,6 +193,28 @@
     <div id="whyContent" style="margin-top:8px;font-size:14px;color:#0a1e2e"></div>
   </div>
 </div>
+  // ===== COACH MODAL CONTROL =====
+const coachModal = document.getElementById('coachModal');
+const coachClose = document.getElementById('coachClose');
+if (coachModal && coachClose) {
+  // Close when pressing the button
+  coachClose.onclick = () => {
+    coachModal.style.display = 'none';
+  };
+
+  // Close when clicking the background overlay
+  coachModal.addEventListener('click', (e) => {
+    if (e.target === coachModal) coachModal.style.display = 'none';
+  });
+
+  // Optional: close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && coachModal.style.display === 'block') {
+      coachModal.style.display = 'none';
+    }
+  });
+}
+
 
 <div id="compareModal">
   <div id="compareCard">
