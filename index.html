@@ -204,7 +204,7 @@
   const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return isNaN(n)?null:n; };
   const round1 = (n)=> n==null?null:Math.round(n*10)/10;
 
-  // Paint version badge without changing anything else
+  // Paint version badge
   const vb = $('versionBadge'); if (vb) vb.textContent = `v${APP_VERSION}`;
 
   const BASE_TOL = { sh:4, sc:4, evap:4, dt:5 };
@@ -314,7 +314,30 @@
       deltaT: deltaT==null?null:round1(deltaT), deltaTSource
     };
 
-    let causes = {'Undercharge (low refrigerant)':8,'Overcharge (too much refrigerant)':6,'Restriction — metering device / drier':6,'Low airflow across evaporator':6,'Non-condensables (air in system)':4,'Compressor mechanical issue (valves/leak)':4,'Equipment mismatch (ODU>IDU)':4,'TXV overfeeding (adjust superheat)':0,'TXV underfeeding (adjust superheat)':0,'EEV overfeeding (check control/sensors)':0,'EEV underfeeding (check control/sensors)':0};
+    // ====== Expanded fault dictionary (labels only; scoring unchanged) ======
+    let causes = {
+      'System operating properly': 0,
+      'Undercharge (low refrigerant)':8,
+      'Overcharge (too much refrigerant)':6,
+      'Restriction — metering device / drier':6,
+      'Low airflow across evaporator':6,
+      'Non-condensables (air in system)':4,
+      'Compressor mechanical issue (valves/leak)':4,
+      'Equipment mismatch (ODU>IDU)':4,
+      'TXV overfeeding (adjust superheat)':0,
+      'TXV underfeeding (adjust superheat)':0,
+      'EEV overfeeding (check control/sensors)':0,
+      'EEV underfeeding (check control/sensors)':0,
+      // Added to cover your scenario set
+      'Condenser airflow failure (fan out / slow)':0,
+      'Reversing valve bypass (cooling)':0,
+      'Reversing valve bypass (heating)':0,
+      'Mixed refrigerant / contamination':0,
+      'High SC from mild ambient (verify manufacturer target)':0,
+      'Freeze risk / airflow marginal':0,
+      'Heating mode: outdoor TXV restriction / underfeed':0,
+    };
+    // =======================================================================
 
     const rules = [];
     const othersOK = (det.subcool!=null && Math.abs(det.subcool - d.targetSC) <= BASE_TOL.sc) &&
@@ -410,18 +433,45 @@
     });
   }
 
+  // ===== Confirm dropdown: include ALL known faults so techs can override =====
   function populateConfirmOptions(r){
     const sel = $('confirmSelect'); if(!sel) return;
     const keep = sel.value;
     sel.innerHTML='';
     const optBlank = document.createElement('option'); optBlank.value=''; optBlank.textContent='— Optional: Confirm diagnosis (logs to CSV) —'; sel.appendChild(optBlank);
+
     const seen = new Set();
-    const add = (label)=>{ if(seen.has(label)) return; seen.add(label); const o=document.createElement('option'); o.value=label; o.textContent=label; sel.appendChild(o); };
+    const add = (label)=>{ if(!label || seen.has(label)) return; seen.add(label); const o=document.createElement('option'); o.value=label; o.textContent=label; sel.appendChild(o); };
+
     if (r.primary && r.primary.cause) add(r.primary.cause);
     (r.ranked||[]).forEach(x=> add(x.cause));
-    add('System operating properly');
-    for (const o of sel.options){ if(o.value===keep){ sel.value=keep; break; } }
+
+    const allCauses = [
+      'System operating properly',
+      'Undercharge (low refrigerant)',
+      'Overcharge (too much refrigerant)',
+      'Restriction — metering device / drier',
+      'Low airflow across evaporator',
+      'Non-condensables (air in system)',
+      'Compressor mechanical issue (valves/leak)',
+      'Equipment mismatch (ODU>IDU)',
+      'TXV overfeeding (adjust superheat)',
+      'TXV underfeeding (adjust superheat)',
+      'EEV overfeeding (check control/sensors)',
+      'EEV underfeeding (check control/sensors)',
+      'Condenser airflow failure (fan out / slow)',
+      'Reversing valve bypass (cooling)',
+      'Reversing valve bypass (heating)',
+      'Mixed refrigerant / contamination',
+      'High SC from mild ambient (verify manufacturer target)',
+      'Freeze risk / airflow marginal',
+      'Heating mode: outdoor TXV restriction / underfeed',
+    ];
+    allCauses.forEach(add);
+
+    sel.value = keep;
   }
+  // ===========================================================================
 
   function renderResults(r){
     const pf=$('primaryFault'), cp=$('confPct'), note=$('confNote');
@@ -520,9 +570,22 @@
     });
     const exportBtn=$('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
       const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
-      const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[\\",\\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-      const order = ["time","appVersion","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","deltaTSource","rulesFired","valveNote"];
-      const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\\n');
+      const escape = (v)=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+      // === CSV column order (fixed & aligned) ===
+      const order = [
+        "time","appVersion","refrig","systemType",
+        "indoorDb","indoorWb","outdoorDb",
+        "targetSH","targetSC",
+        "suctionP","suctionT","liquidP","liquidT",
+        "supplyT","returnT","deltaT","deltaTSource",
+        "evapSat","condSat","superheat","subcool",
+        "suggestedDiagnosis","actualDiagnosis",
+        "confPct","learningOn","testerInitials",
+        "rulesFired","valveNote"
+      ];
+      const header = order.join(',');
+      const lines = rows.map(r => order.map(k => escape(r[k])).join(','));
+      const csv = [header].concat(lines).join('\n');
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=CSV_NAME; a.click();
     });
     const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } });
@@ -571,4 +634,3 @@
   
 </body>
 </html>
-
