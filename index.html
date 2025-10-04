@@ -34,21 +34,25 @@
   .cause{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:#f6fbff;border:1px solid var(--line);margin-top:8px}
   .bar{flex:1;height:10px;background:#e8f2fc;border-radius:6px;overflow:hidden}
   .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--cool),var(--hot))}
-  .history{max-height:240px;overflow:auto}
+  .history{max-height:260px;overflow:auto}
   .hist{display:flex;justify-content:space-between;align-items:center;background:#f9fcff;border:1px solid var(--line);padding:8px;border-radius:10px;margin-top:6px}
   .badge{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:8px;font-size:11px;border:1px solid var(--line);color:#2b5b7a}
   .badge.bad{color:#fff;background:#b00020;border-color:#b00020}
   #stickyActions{position:sticky;bottom:0;z-index:10;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);padding-top:8px}
   .tip{font-size:12px;color:#56728a}
-  #whyModal,#coachModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
-  #whyCard,#coachCard{max-width:900px;margin:6% auto;background:#fff;border-radius:14px;border:1px solid #dfeaf5;padding:14px}
+  #whyModal,#coachModal,#playbackModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
+  #whyCard,#coachCard,#playbackCard{max-width:900px;margin:6% auto;background:#fff;border-radius:14px;border:1px solid #dfeaf5;padding:14px}
   #coachCard{max-width:720px}
+  #playbackCard{max-width:740px}
 
   /* Compare table */
   #comparePanel { margin-top: 10px; }
   table.compare { width:100%; border-collapse:collapse; font-size:13px }
   table.compare th, table.compare td { border:1px solid var(--line); padding:6px; text-align:center }
   table.compare th { background:#f3f8ff }
+
+  .playback-controls button{margin-right:6px}
+  .playback-meta{color:#56728a;font-size:12px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -56,7 +60,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.3</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.4</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
       <div class="tip"><strong>Please use tool to diagnose issues, confirm which diagnosis is correct and click “Send Report” to share data with Administrator.</strong></div>
     </div>
     <button id="installBtn">Install App</button>
@@ -89,7 +93,7 @@
 
       <div class="section-title">Refrigerant Cycle</div>
       <div class="panel" style="padding:12px">
-        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.3" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.4" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
       </div>
 
       <div class="section-title">Field Readings</div>
@@ -114,18 +118,7 @@
       <div class="section-title">Case & Snapshot</div>
       <div class="form-grid two-col">
         <div><label>Case ID</label><input id="caseId" placeholder="e.g., 24-1007-A"></div>
-        <div>
-          <label>Snapshot Label</label>
-          <select id="snapshotLabel">
-            <option value="t0" selected>t0 (baseline)</option>
-            <option value="t+10">t+10</option>
-            <option value="t+20">t+20</option>
-            <option value="other">other…</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-grid">
-        <div><label>Custom Snapshot (if "other")</label><input id="snapshotOther" placeholder="e.g., post-cleaning"></div>
+        <div><label>Snapshot Label</label><input id="snapshotLabelInput" placeholder="T0" value="T0"></div>
       </div>
 
       <div id="stickyActions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -137,6 +130,7 @@
         </select>
         <button class="btn secondary" id="confirmBtn">Confirm</button>
         <button class="btn secondary" id="compareBtn" title="Compare snapshots in this Case ID">Compare Case</button>
+        <button class="btn secondary" id="playbackBtn" title="Playback snapshots in this Case ID">Playback</button>
       </div>
 
       <div id="comparePanel" class="panel" style="display:none;padding:12px">
@@ -191,7 +185,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build <strong>v8.0.3</strong> · Confidence alignment · Coach modal fixed · Excel‑friendly CSV · Case ID & Snapshot labels · Case Compare panel.
+    Build <strong>v8.0.4</strong> · Confidence alignment · Coach & Why close fixed · Excel‑friendly CSV · Case + manual Snapshot label · Compare & Playback restored · PT loader hardened.
   </footer>
 </div>
 
@@ -217,9 +211,27 @@
   </div>
 </div>
 
+<!-- Playback Modal -->
+<div id="playbackModal">
+  <div id="playbackCard" role="dialog" aria-modal="true" aria-labelledby="playbackTitle">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong id="playbackTitle">Case Playback</strong>
+      <button id="playbackClose" class="btn secondary" style="padding:6px 10px">Close</button>
+    </div>
+    <div class="playback-controls" style="margin-top:8px">
+      <button class="btn secondary" id="pbPrev">◀ Prev</button>
+      <button class="btn secondary" id="pbPlay">▶ Play</button>
+      <button class="btn secondary" id="pbPause" style="display:none">⏸ Pause</button>
+      <button class="btn secondary" id="pbNext">Next ▶</button>
+      <select id="pbJump" style="margin-left:8px;padding:8px;border-radius:10px;border:1px solid var(--line)"></select>
+    </div>
+    <div id="playbackMeta" class="playback-meta"></div>
+  </div>
+</div>
+
 <script>
 (function(){
-  const BUILD_ID = '8.0.3';
+  const BUILD_ID = '8.0.4';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return isNaN(n)?null:n; };
@@ -237,7 +249,14 @@
   const PT = {}; const ptMeta = {}; const PT_BADGE = $('ptBadge');
 
   function timeout(ms){ return new Promise((_,rej)=> setTimeout(()=>rej(new Error('timeout')),ms)); }
-  async function getJSON(url){ const res = await Promise.race([fetch(url,{cache:'reload'}), timeout(3500)]); if(!res || !res.ok) throw new Error('http '+(res && res.status)); const ct = res.headers.get('content-type')||''; if(!ct.includes('application/json')) throw new Error('bad content-type'); return res.json(); }
+  async function getJSON(url){
+    try {
+      const res = await Promise.race([fetch(url,{cache:'reload'}), timeout(4500)]);
+      if(!res || !res.ok) throw new Error('http '+(res && res.status));
+      const text = await res.text();
+      return JSON.parse(text);
+    } catch(e) { throw e; }
+  }
 
   async function initRefrigerants(){
     const sel = $('refrig'); if(!sel) return;
@@ -250,8 +269,9 @@
     try{
       const idx = await getJSON(SUBPATH+'pt/index.json?v='+BUILD_ID);
       const names = Array.isArray(idx.refrigerants) && idx.refrigerants.length ? idx.refrigerants.map(x=>x.name) : defaults;
-      if (names.join('|') !== defaults.join('|')){
-        sel.innerHTML=''; names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); });
+      if (names.length) {
+        sel.innerHTML='';
+        names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); });
         sel.value = names.includes('R410A') ? 'R410A' : names[0];
       }
       let csvFound = false;
@@ -260,14 +280,10 @@
           const tab = await getJSON(SUBPATH+'pt/'+item.file+'?v='+BUILD_ID);
           if (tab && Array.isArray(tab.table) && tab.table.length){ PT[item.name]=tab.table; ptMeta[item.name]=item.source||'CSV'; csvFound = true; }
         } catch(e){
-          const fn = item.name;
-          if(PT_FALLBACK[fn]){ PT[fn]=PT_FALLBACK[fn]; ptMeta[fn]='Fallback'; }
+          const fn = item.name; if(PT_FALLBACK[fn]){ PT[fn]=PT_FALLBACK[fn]; ptMeta[fn]='Fallback'; }
         }
       }
-      if (PT_BADGE){
-        if(csvFound){ PT_BADGE.textContent='PT: CSV'; PT_BADGE.classList.remove('bad'); }
-        else { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
-      }
+      if (PT_BADGE){ if(csvFound){ PT_BADGE.textContent='PT: CSV'; PT_BADGE.classList.remove('bad'); } else { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); } }
     }catch(e){
       ['R410A','R22','R32','R454B'].forEach(n=>{ if(!PT[n]){ PT[n]=PT_FALLBACK[n]; ptMeta[n]='Fallback'; } });
       if (PT_BADGE){ PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
@@ -461,14 +477,18 @@
       };
       closeBtn.onclick = ()=> modal.style.display='none';
       modal.onclick = (e)=>{ if(e.target===modal) modal.style.display='none'; };
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && modal.style.display==='block') modal.style.display='none'; });
     }
   }
 
   function currentSnapshotLabel(){
-    const sel = $('snapshotLabel'); const other = $('snapshotOther');
-    if (!sel) return '';
-    if (sel.value === 'other') return (other && other.value.trim()) ? other.value.trim() : 'other';
-    return sel.value;
+    const inp = $('snapshotLabelInput'); return (inp && inp.value.trim()) ? inp.value.trim() : 'T0';
+  }
+
+  function ensureOption(selectEl, value){
+    if (!selectEl) return;
+    const exists = Array.from(selectEl.options).some(o=>o.value===value);
+    if (!exists){ const o=document.createElement('option'); o.value=value; o.textContent=value.replace('R','R-'); selectEl.appendChild(o); }
   }
 
   function readInputs(){
@@ -485,6 +505,22 @@
     };
   }
 
+  function applySnapshotToForm(s){
+    const setVal = (id, val)=>{ const el=$(id); if(el!=null && val!=null) el.value = String(val); };
+    if (s.refrig) ensureOption($('refrig'), s.refrig);
+    setVal('refrig', s.refrig);
+    setVal('systemType', s.systemType);
+    setVal('indoorDb', s.indoorDb); setVal('indoorWb', s.indoorWb); setVal('outdoorDb', s.outdoorDb);
+    setVal('targetSH', s.targetSH); setVal('targetSC', s.targetSC);
+    setVal('suctionP', s.suctionP); setVal('suctionT', s.suctionT);
+    setVal('liquidP', s.liquidP);  setVal('liquidT', s.liquidT);
+    setVal('supplyT', s.supplyT);   setVal('returnT', s.returnT);
+    setVal('deltaTManual', s.deltaT);
+    const sl = $('snapshotLabelInput'); if (sl) sl.value = s.snapshotLabel || sl.value || 'T0';
+    const ci = $('caseId'); if (ci) ci.value = s.caseId || ci.value || '';
+    const d=readInputs(); const r=diagnoseAll(d); renderResults(r);
+  }
+
   function renderHist(){
     const list=$('historyList'); const a=loadHist(); if(!list) return;
     if(a.length===0){ list.textContent='No saved readings.'; return; }
@@ -497,9 +533,6 @@
       d.appendChild(del); list.appendChild(d);
     });
   }
-
-  function loadHist(){ try{return JSON.parse(localStorage.getItem('hvac_hist_v7_4b')||'[]');}catch(e){return []} }
-  function saveHist(a){ localStorage.setItem('hvac_hist_v7_4b', JSON.stringify(a)); }
 
   function buildCompareTable(rows){
     const cols = [
@@ -539,23 +572,20 @@
   }
 
   function initButtons(){
-    const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', ()=>{
-      const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp.'); return; }
-      const r=diagnoseAll(d); renderResults(r);
-    });
+    const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp.'); return; } const r=diagnoseAll(d); renderResults(r); });
 
     const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
       const entry = {
-        time: new Date().toLocaleString(), appVersion:'v8.0.3', refrig:d.refrig, systemType:d.systemType,
+        time: new Date().toLocaleString(), appVersion:'v8.0.4', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
         suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'',
         rulesFired:(r.rulesFired||[]).join(' | '),
         caseId: d.caseId || '',
-        snapshotLabel: d.snapshotLabel || ''
+        snapshotLabel: d.snapshotLabel || 'T0'
       };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
     });
@@ -565,22 +595,21 @@
       const esc=(v)=>{ if(v==null) return ''; const s=String(v); return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
       const order=["time","appVersion","caseId","snapshotLabel","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","deltaTSource","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","rulesFired"];
       const header=order.join(','); const body=rows.map(r=>order.map(k=>esc(r[k])).join(',')).join('\r\n'); const csv='\ufeff'+header+'\r\n'+body;
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_0_3.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_0_4.csv'; a.click();
     });
 
-    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem('hvac_hist_v7_4b'); renderHist(); } });
+    const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } });
 
     const confirmBtn = $('confirmBtn');
     if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
-      const sel = $('confirmSelect');
-      if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
+      const sel = $('confirmSelect'); if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d=readInputs(); const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.3', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.4', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
         suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:true, testerInitials:'', rulesFired:(r.rulesFired||[]).join(' | '),
-        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || '' };
+        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0' };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist(); alert('Confirmation recorded.');
     });
 
@@ -591,7 +620,7 @@
       if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
       const all = loadHist().filter(r=> (r.caseId||'').trim() === caseInput.trim());
       if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
-      const labelOrder = {'t0':0,'t+10':1,'t+20':2};
+      const labelOrder = {'t0':0,'t+10':1,'t+20':2,'T0':0,'T+10':1,'T+20':2};
       all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
       const html = buildCompareTable(all);
       $('compareTableWrap').innerHTML = html;
@@ -599,7 +628,17 @@
       $('comparePanel').style.display='block';
     });
 
-    // Why modal close
+    // Playback
+    const playbackBtn = $('playbackBtn');
+    if (playbackBtn) playbackBtn.addEventListener('click', ()=> openPlayback());
+
+    const pbModal = $('playbackModal'); const pbClose = $('playbackClose');
+    if (pbModal && pbClose) { 
+      pbClose.onclick = ()=> pbModal.style.display='none';
+      pbModal.onclick = (e)=>{ if(e.target===pbModal) pbModal.style.display='none'; };
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && pbModal.style.display==='block') pbModal.style.display='none'; });
+    }
+
     const whyModal = $('whyModal'), whyClose = $('whyClose');
     if (whyModal && whyClose){ 
       whyClose.onclick = ()=> whyModal.style.display='none';
@@ -607,11 +646,9 @@
       document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && whyModal.style.display==='block') whyModal.style.display='none'; });
     }
 
-    // Coach button
+    // Coach
     const coachBtn = $('coachBtn');
     if (coachBtn) coachBtn.onclick = ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter the four required readings first.'); return; } const r=diagnoseAll(d); openCoach(r); };
-
-    // Coach modal close (button, backdrop, Escape)
     const coachModal = document.getElementById('coachModal');
     const coachClose = document.getElementById('coachClose');
     if (coachModal && coachClose && !coachModal._wired) {
@@ -644,6 +681,51 @@
     const el = document.getElementById('coachContent'); const modal = document.getElementById('coachModal');
     el.innerHTML = '<ul style="margin:0;padding-left:18px">' + ranked.map(function(i){ return '<li><strong>'+i.a.label+'</strong> — info gain '+(i.g*100).toFixed(1)+'%</li>'; }).join('') + '</ul>';
     modal.style.display='block';
+  }
+
+  // Playback feature
+  let pbTimer = null; let pbIndex = 0; let pbRows = [];
+  function openPlayback(){
+    const caseInput = ($('caseId')||{}).value||'';
+    if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
+    const all = loadHist().filter(r=> (r.caseId||'').trim() === caseInput.trim());
+    if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
+    const labelOrder = {'t0':0,'t+10':1,'t+20':2,'T0':0,'T+10':1,'T+20':2};
+    all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
+    pbRows = all; pbIndex = 0;
+    const jump = $('pbJump'); jump.innerHTML = '';
+    pbRows.forEach((r,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=(r.snapshotLabel||'—')+' — '+(r.time||''); jump.appendChild(o); });
+    $('playbackMeta').textContent = `Loaded ${pbRows.length} snapshot(s) for Case ${caseInput}`;
+    $('playbackModal').style.display='block';
+    wirePlaybackControls();
+    showSnapshot(0);
+  }
+
+  function wirePlaybackControls(){
+    $('pbPrev').onclick = ()=> showSnapshot(pbIndex-1);
+    $('pbNext').onclick = ()=> showSnapshot(pbIndex+1);
+    $('pbPlay').onclick = ()=> startPlayback();
+    $('pbPause').onclick = ()=> stopPlayback();
+    $('pbJump').onchange = (e)=> showSnapshot(parseInt(e.target.value,10)||0);
+  }
+
+  function showSnapshot(i){
+    if (!pbRows.length) return;
+    if (i<0) i=pbRows.length-1; if (i>=pbRows.length) i=0;
+    pbIndex = i; const s = pbRows[pbIndex];
+    $('pbJump').value = String(pbIndex);
+    $('playbackMeta').textContent = `Snapshot ${pbIndex+1}/${pbRows.length} — ${s.snapshotLabel||'—'} — ${s.time||''}`;
+    applySnapshotToForm(s);
+  }
+
+  function startPlayback(){
+    if (pbTimer) return;
+    $('pbPlay').style.display='none'; $('pbPause').style.display='inline-block';
+    pbTimer = setInterval(()=> showSnapshot(pbIndex+1), 1800);
+  }
+  function stopPlayback(){
+    if (!pbTimer) return; clearInterval(pbTimer); pbTimer=null;
+    $('pbPause').style.display='none'; $('pbPlay').style.display='inline-block';
   }
 
   async function boot(){
