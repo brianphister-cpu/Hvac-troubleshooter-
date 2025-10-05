@@ -6,7 +6,7 @@
  */
 (function () {
   // ===== CONFIG =====
-  const RELAY_ENDPOINT = "https://hvac-email-relay.vercel.app/api/send-report"; // <-- PUT YOUR URL HERE
+  const RELAY_ENDPOINT = "https://hvac-email-relay.vercel.app/api/sendCsv"; // <-- PUT YOUR URL HERE
   const SUPPORT_EMAIL  = "Brian.phister@harrisairsystems.com";
   const CSV_FILENAME   = "hvac_report.csv";
   const HIST_KEY       = "hvac_hist_v7_4b";    // keep storage key for continuity
