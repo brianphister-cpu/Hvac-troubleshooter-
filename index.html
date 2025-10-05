@@ -43,9 +43,8 @@
   #whyModal,#coachModal,#playbackModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
   #whyCard,#coachCard,#playbackCard{max-width:900px;margin:6% auto;background:#fff;border-radius:14px;border:1px solid #dfeaf5;padding:14px}
   #coachCard{max-width:720px}
-  #playbackCard{max-width:740px}
+  #playbackCard{max-width:780px}
 
-  /* Compare table */
   #comparePanel { margin-top: 10px; }
   table.compare { width:100%; border-collapse:collapse; font-size:13px }
   table.compare th, table.compare td { border:1px solid var(--line); padding:6px; text-align:center }
@@ -53,6 +52,9 @@
 
   .playback-controls button{margin-right:6px}
   .playback-meta{color:#56728a;font-size:12px;margin-top:6px}
+
+  /* Case ID row with inline button */
+  .case-row{display:grid;grid-template-columns:1fr auto;gap:8px}
 </style>
 </head>
 <body>
@@ -60,7 +62,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.4</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.5</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
       <div class="tip"><strong>Please use tool to diagnose issues, confirm which diagnosis is correct and click “Send Report” to share data with Administrator.</strong></div>
     </div>
     <button id="installBtn">Install App</button>
@@ -93,7 +95,7 @@
 
       <div class="section-title">Refrigerant Cycle</div>
       <div class="panel" style="padding:12px">
-        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.4" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.5" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
       </div>
 
       <div class="section-title">Field Readings</div>
@@ -117,8 +119,18 @@
 
       <div class="section-title">Case & Snapshot</div>
       <div class="form-grid two-col">
-        <div><label>Case ID</label><input id="caseId" placeholder="e.g., 24-1007-A"></div>
-        <div><label>Snapshot Label</label><input id="snapshotLabelInput" placeholder="T0" value="T0"></div>
+        <div class="case-row">
+          <div>
+            <label>Case ID</label>
+            <input id="caseId" placeholder="e.g., 25-1004-A">
+          </div>
+          <div style="align-self:end;">
+            <button class="btn secondary" id="newCaseBtn" title="Create new Case ID">New ID</button>
+          </div>
+        </div>
+        <div>
+          <label>Snapshot Label</label><input id="snapshotLabelInput" placeholder="T0" value="T0">
+        </div>
       </div>
 
       <div id="stickyActions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -185,7 +197,7 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build <strong>v8.0.4</strong> · Confidence alignment · Coach & Why close fixed · Excel‑friendly CSV · Case + manual Snapshot label · Compare & Playback restored · PT loader hardened.
+    Build <strong>v8.0.5</strong> · Case New-ID button · Playback charts restored · Confidence alignment · Excel‑friendly CSV · Full confirm list · PT loader hardened.
   </footer>
 </div>
 
@@ -226,12 +238,18 @@
       <select id="pbJump" style="margin-left:8px;padding:8px;border-radius:10px;border:1px solid var(--line)"></select>
     </div>
     <div id="playbackMeta" class="playback-meta"></div>
+    <div style="margin-top:10px">
+      <canvas id="pbChartPress" width="720" height="260" style="width:100%;max-width:720px;border:1px solid var(--line);border-radius:12px;background:#fff"></canvas>
+      <div style="height:8px"></div>
+      <canvas id="pbChartTemps" width="720" height="260" style="width:100%;max-width:720px;border:1px solid var(--line);border-radius:12px;background:#fff"></canvas>
+      <div class="tip" style="margin-top:6px">Pressures scale 0–600 psig; Temps (SH/SC/ΔT) scale 0–60°F. Hover labels show values per snapshot.</div>
+    </div>
   </div>
 </div>
 
 <script>
 (function(){
-  const BUILD_ID = '8.0.4';
+  const BUILD_ID = '8.0.5';
   const SUBPATH = '/Hvac-troubleshooter-/';
   const $ = (id)=>document.getElementById(id);
   const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return isNaN(n)?null:n; };
@@ -464,26 +482,9 @@
       });
     }
     populateConfirmOptions(r);
-
-    const whyBtn = $('whyBtn'), modal = $('whyModal'), closeBtn = $('whyClose');
-    if (whyBtn && modal && closeBtn){
-      whyBtn.onclick = ()=>{
-        const nums = reasoningLines(r.details, r.input);
-        const rules = (r.rulesFired||[]).map(x=>`<li>${x}</li>`).join('') || '<li>(no major rule triggers)</li>';
-        $('whyContent').innerHTML =
-          `<div><strong>Numbers used</strong><ul>${nums.map(s=>`<li>${s}</li>`).join('')}</ul></div>
-           <div style="margin-top:8px"><strong>Rules that influenced this result</strong><ul>${rules}</ul></div>`;
-        modal.style.display='block';
-      };
-      closeBtn.onclick = ()=> modal.style.display='none';
-      modal.onclick = (e)=>{ if(e.target===modal) modal.style.display='none'; };
-      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && modal.style.display==='block') modal.style.display='none'; });
-    }
   }
 
-  function currentSnapshotLabel(){
-    const inp = $('snapshotLabelInput'); return (inp && inp.value.trim()) ? inp.value.trim() : 'T0';
-  }
+  function currentSnapshotLabel(){ const i=$('snapshotLabelInput'); return (i && i.value.trim())?i.value.trim():'T0'; }
 
   function ensureOption(selectEl, value){
     if (!selectEl) return;
@@ -571,6 +572,123 @@
     return '<table class="compare">'+header+body+'</table>';
   }
 
+  // Simple canvas plotting helpers
+  function drawGrid(ctx, w, h, xPad, yPad, yMax, yStep, label){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0a1e2e'; ctx.font = '12px Inter, system-ui, Arial';
+    ctx.fillText(label, 8, 16);
+    ctx.strokeStyle = '#dfeaf5'; ctx.lineWidth = 1;
+    for (let y=0; y<=yMax; y+=yStep) {
+      const yy = h - yPad - (y / yMax) * (h - 2*yPad);
+      ctx.beginPath(); ctx.moveTo(xPad, yy); ctx.lineTo(w - xPad/2, yy); ctx.stroke();
+      ctx.fillStyle = '#56728a'; ctx.fillText(String(y), 6, yy - 2);
+    }
+  }
+  function plotSeries(ctx, w, h, xPad, yPad, yMax, values, color, label, xLabels){
+    const n = values.length; if (!n) return;
+    const xStep = (w - 2*xPad) / Math.max(1, n-1);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+    values.forEach((v,i)=>{
+      if (v==null) return;
+      const x = xPad + i * xStep;
+      const y = h - yPad - Math.max(0, Math.min(1, v / yMax)) * (h - 2*yPad);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    ctx.fillStyle = color;
+    values.forEach((v,i)=>{
+      if (v==null) return;
+      const x = xPad + i * xStep;
+      const y = h - yPad - Math.max(0, Math.min(1, v / yMax)) * (h - 2*yPad);
+      ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+    });
+    // X labels
+    ctx.fillStyle = '#56728a'; ctx.font = '11px Inter, system-ui, Arial';
+    xLabels.forEach((lbl,i)=>{
+      const x = xPad + i * xStep; ctx.fillText(lbl, x-12, h-6);
+    });
+    // Legend
+    ctx.fillStyle = color; ctx.fillRect(w-140, 10, 10, 10);
+    ctx.fillStyle = '#0a1e2e'; ctx.fillText(label, w-125, 20);
+  }
+
+  // Playback globals
+  let pbTimer = null; let pbIndex = 0; let pbRows = [];
+
+  function refreshPlaybackCharts(){
+    const press = document.getElementById('pbChartPress'); const tctx = press.getContext('2d');
+    const temps = document.getElementById('pbChartTemps'); const uctx = temps.getContext('2d');
+    const w = press.width, h = press.height; const xPad=40, yPad=26;
+    const labels = pbRows.map(r=> (r.snapshotLabel || '').toString());
+    const suction = pbRows.map(r=> r.suctionP!=null? Number(r.suctionP): null);
+    const liquid  = pbRows.map(r=> r.liquidP!=null?  Number(r.liquidP):  null);
+    const sh = pbRows.map(r=> r.superheat!=null? Number(r.superheat): null);
+    const sc = pbRows.map(r=> r.subcool!=null?  Number(r.subcool):  null);
+    const dt = pbRows.map(r=> r.deltaT!=null?   Number(r.deltaT):   null);
+
+    drawGrid(tctx, w, h, xPad, yPad, 600, 100, 'Pressures (psig)');
+    plotSeries(tctx, w, h, xPad, yPad, 600, suction, '#1d9df5', 'Suction', labels);
+    plotSeries(tctx, w, h, xPad, yPad, 600, liquid,  '#ff6a3d', 'Liquid', labels);
+
+    drawGrid(uctx, w, h, xPad, yPad, 60, 10, 'Temps (°F)');
+    plotSeries(uctx, w, h, xPad, yPad, 60, sh, '#2f7bff', 'Superheat', labels);
+    plotSeries(uctx, w, h, xPad, yPad, 60, sc, '#31c48d', 'Subcool', labels);
+    plotSeries(uctx, w, h, xPad, yPad, 60, dt, '#7d5bed', 'ΔT', labels);
+  }
+
+  function showSnapshot(i){
+    if (!pbRows.length) return;
+    if (i<0) i=pbRows.length-1; if (i>=pbRows.length) i=0;
+    pbIndex = i; const s = pbRows[pbIndex];
+    $('pbJump').value = String(pbIndex);
+    $('playbackMeta').textContent = `Snapshot ${pbIndex+1}/${pbRows.length} — ${s.snapshotLabel||'—'} — ${s.time||''}`;
+    applySnapshotToForm(s);
+    refreshPlaybackCharts();
+  }
+
+  function openPlayback(){
+    const caseInput = ($('caseId')||{}).value||'';
+    if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
+    const all = loadHist().filter(r=> (r.caseId||'').trim() === caseInput.trim());
+    if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
+    const labelOrder = {'t0':0,'t+10':1,'t+20':2,'T0':0,'T+10':1,'T+20':2};
+    all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
+    pbRows = all; pbIndex = 0;
+    const jump = $('pbJump'); jump.innerHTML = '';
+    pbRows.forEach((r,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=(r.snapshotLabel||'—')+' — '+(r.time||''); jump.appendChild(o); });
+    $('playbackMeta').textContent = `Loaded ${pbRows.length} snapshot(s) for Case ${caseInput}`;
+    $('playbackModal').style.display='block';
+    wirePlaybackControls();
+    showSnapshot(0);
+  }
+
+  function wirePlaybackControls(){
+    $('pbPrev').onclick = ()=> showSnapshot(pbIndex-1);
+    $('pbNext').onclick = ()=> showSnapshot(pbIndex+1);
+    $('pbPlay').onclick = ()=> startPlayback();
+    $('pbPause').onclick = ()=> stopPlayback();
+    $('pbJump').onchange = (e)=> showSnapshot(parseInt(e.target.value,10)||0);
+  }
+
+  function startPlayback(){
+    if (pbTimer) return;
+    $('pbPlay').style.display='none'; $('pbPause').style.display='inline-block';
+    pbTimer = setInterval(()=> showSnapshot(pbIndex+1), 1800);
+  }
+  function stopPlayback(){
+    if (!pbTimer) return; clearInterval(pbTimer); pbTimer=null;
+    $('pbPause').style.display='none'; $('pbPlay').style.display='inline-block';
+  }
+
+  function newCaseId(){
+    const d = new Date();
+    const y = String(d.getFullYear()).slice(-2);
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const rand = Math.floor(Math.random()*900)+100; // 3-digit
+    return `${y}-${m}${day}-${rand}`;
+  }
+
   function initButtons(){
     const diagBtn=$('diagBtn'); if(diagBtn) diagBtn.addEventListener('click', ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp.'); return; } const r=diagnoseAll(d); renderResults(r); });
 
@@ -578,14 +696,13 @@
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
       const entry = {
-        time: new Date().toLocaleString(), appVersion:'v8.0.4', refrig:d.refrig, systemType:d.systemType,
+        time: new Date().toLocaleString(), appVersion:'v8.0.5', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
         suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'',
         rulesFired:(r.rulesFired||[]).join(' | '),
-        caseId: d.caseId || '',
-        snapshotLabel: d.snapshotLabel || 'T0'
+        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0'
       };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
     });
@@ -595,7 +712,7 @@
       const esc=(v)=>{ if(v==null) return ''; const s=String(v); return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
       const order=["time","appVersion","caseId","snapshotLabel","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","deltaTSource","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","rulesFired"];
       const header=order.join(','); const body=rows.map(r=>order.map(k=>esc(r[k])).join(',')).join('\r\n'); const csv='\ufeff'+header+'\r\n'+body;
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_0_4.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_0_5.csv'; a.click();
     });
 
     const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } });
@@ -604,7 +721,7 @@
     if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
       const sel = $('confirmSelect'); if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d=readInputs(); const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.4', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.5', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
@@ -613,7 +730,6 @@
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist(); alert('Confirmation recorded.');
     });
 
-    // Compare
     const compareBtn = $('compareBtn');
     if (compareBtn) compareBtn.addEventListener('click', ()=>{
       const caseInput = ($('caseId')||{}).value||'';
@@ -628,7 +744,6 @@
       $('comparePanel').style.display='block';
     });
 
-    // Playback
     const playbackBtn = $('playbackBtn');
     if (playbackBtn) playbackBtn.addEventListener('click', ()=> openPlayback());
 
@@ -646,17 +761,14 @@
       document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && whyModal.style.display==='block') whyModal.style.display='none'; });
     }
 
+    // New Case ID button
+    const newCaseBtn = $('newCaseBtn');
+    if (newCaseBtn) { newCaseBtn.onclick = ()=>{ const id=newCaseId(); const ci=$('caseId'); if(ci) ci.value=id; }; }
+
     // Coach
     const coachBtn = $('coachBtn');
-    if (coachBtn) coachBtn.onclick = ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter the four required readings first.'); return; } const r=diagnoseAll(d); openCoach(r); };
-    const coachModal = document.getElementById('coachModal');
-    const coachClose = document.getElementById('coachClose');
-    if (coachModal && coachClose && !coachModal._wired) {
-      coachClose.onclick = () => coachModal.style.display = 'none';
-      coachModal.addEventListener('click', (e) => { if (e.target === coachModal) coachModal.style.display = 'none'; });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && coachModal.style.display === 'block') coachModal.style.display = 'none'; });
-      coachModal._wired = true;
-    }
+    if (coachBtn) coachBtn.onclick = ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter the four required readings first.'); return; }
+      const r=diagnoseAll(d); openCoach(r); };
   }
 
   function openCoach(r){
@@ -683,59 +795,8 @@
     modal.style.display='block';
   }
 
-  // Playback feature
-  let pbTimer = null; let pbIndex = 0; let pbRows = [];
-  function openPlayback(){
-    const caseInput = ($('caseId')||{}).value||'';
-    if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
-    const all = loadHist().filter(r=> (r.caseId||'').trim() === caseInput.trim());
-    if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
-    const labelOrder = {'t0':0,'t+10':1,'t+20':2,'T0':0,'T+10':1,'T+20':2};
-    all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
-    pbRows = all; pbIndex = 0;
-    const jump = $('pbJump'); jump.innerHTML = '';
-    pbRows.forEach((r,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=(r.snapshotLabel||'—')+' — '+(r.time||''); jump.appendChild(o); });
-    $('playbackMeta').textContent = `Loaded ${pbRows.length} snapshot(s) for Case ${caseInput}`;
-    $('playbackModal').style.display='block';
-    wirePlaybackControls();
-    showSnapshot(0);
-  }
-
-  function wirePlaybackControls(){
-    $('pbPrev').onclick = ()=> showSnapshot(pbIndex-1);
-    $('pbNext').onclick = ()=> showSnapshot(pbIndex+1);
-    $('pbPlay').onclick = ()=> startPlayback();
-    $('pbPause').onclick = ()=> stopPlayback();
-    $('pbJump').onchange = (e)=> showSnapshot(parseInt(e.target.value,10)||0);
-  }
-
-  function showSnapshot(i){
-    if (!pbRows.length) return;
-    if (i<0) i=pbRows.length-1; if (i>=pbRows.length) i=0;
-    pbIndex = i; const s = pbRows[pbIndex];
-    $('pbJump').value = String(pbIndex);
-    $('playbackMeta').textContent = `Snapshot ${pbIndex+1}/${pbRows.length} — ${s.snapshotLabel||'—'} — ${s.time||''}`;
-    applySnapshotToForm(s);
-  }
-
-  function startPlayback(){
-    if (pbTimer) return;
-    $('pbPlay').style.display='none'; $('pbPause').style.display='inline-block';
-    pbTimer = setInterval(()=> showSnapshot(pbIndex+1), 1800);
-  }
-  function stopPlayback(){
-    if (!pbTimer) return; clearInterval(pbTimer); pbTimer=null;
-    $('pbPause').style.display='none'; $('pbPlay').style.display='inline-block';
-  }
-
-  async function boot(){
-    await initRefrigerants();
-    renderHist();
-    initButtons();
-    let deferredPrompt; const installBtn = $('installBtn');
-    window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt = e; if(installBtn) installBtn.style.display='inline-block'; });
-    if (installBtn) installBtn.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.style.display='none'; });
-  }
+  // Boot
+  async function boot(){ await initRefrigerants(); renderHist(); initButtons(); }
   boot();
 })();
 </script>
