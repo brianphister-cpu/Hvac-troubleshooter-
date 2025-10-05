@@ -419,7 +419,11 @@
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
         suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'',
-        rulesFired:(r.rulesFired||[]).join(' | '), valveNote:r.valveNote||''
+        rulesFired:(r.rulesFired||[]).join(' | '), valveNote:r.valveNote||// New fields for learning and tracking
+caseID: getOrCreateCaseId(),
+snapshotLabel: getSnapshotLabel(),
+technicianName: getTechName(),
+''
       };
       a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
     });
