@@ -59,29 +59,33 @@
   }
 
   // ===== VERCEL RELAY SEND =====
-  async function sendViaRelay(csvBlob, csvFilename, meta){
-    if (!RELAY_ENDPOINT || !/^https?:\/\//i.test(RELAY_ENDPOINT)) {
-      throw new Error("Relay endpoint not configured");
-    }
-    const fd = new FormData();
-    fd.append("file", new File([csvBlob], csvFilename, { type: "text/csv" }));
-    // Include useful metadata for your email template/logs:
-    fd.append("to", SUPPORT_EMAIL);
-    fd.append("subject", "HVAC Troubleshooter Pro — Field Report");
-    fd.append("message", "Attached: CSV export from HVAC Troubleshooter Pro.");
-    fd.append("meta", JSON.stringify(meta || {}));
-
-    const res = await fetch(RELAY_ENDPOINT, {
-      method: "POST",
-      body: fd,
-      // CORS note: your Vercel function should send Access-Control-Allow-Origin: *
-    });
-    if (!res.ok) {
-      const txt = await res.text().catch(()=> "");
-      throw new Error("Relay returned "+res.status+" "+res.statusText+" :: "+txt);
-    }
-    return true;
+  // Replace your current sendViaRelay() with this JSON version:
+async function sendViaRelay(csvText, csvFilename, meta) {
+  if (!RELAY_ENDPOINT || !/^https?:\/\//i.test(RELAY_ENDPOINT)) {
+    throw new Error("Relay endpoint not configured");
   }
+  const payload = {
+    to: SUPPORT_EMAIL,                               // relay requires this
+    subject: "HVAC Troubleshooter Pro — Field Report",
+    message: "Attached: CSV export from HVAC Troubleshooter Pro.",
+    csvContent: csvText,                             // relay requires this
+    filename: csvFilename || "hvac_report.csv",      // optional helper for your email
+    meta: meta || {}
+  };
+
+  const res = await fetch(RELAY_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(()=> "");
+    throw new Error("Relay returned "+res.status+"  :: "+txt);
+  }
+  return true;
+}
+
 
   // ===== MAIN ACTION =====
   async function sendReport(){
