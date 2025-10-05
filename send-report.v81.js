@@ -89,43 +89,43 @@ async function sendViaRelay(csvText, csvFilename, meta) {
 
   // ===== MAIN ACTION =====
   async function sendReport(){
+  try {
+    const rows  = loadHist();
+    const csv   = buildCSV(rows); // <-- this is plain text
+    const blob  = new Blob([csv], { type: "text/csv" });
+
+    const meta = {
+      rowCount: rows.length,
+      latest: rows[0] || null,
+      userAgent: navigator.userAgent,
+      origin: location.origin,
+      path: location.pathname + location.search
+    };
+
+    // 1) Try relay with JSON (matches your server)
     try {
-      // Build CSV from history
-      const rows  = loadHist();
-      const csv   = buildCSV(rows);
-      const blob  = new Blob([csv], { type: "text/csv" });
-      // Minimal meta: include counters and latest case context if present
-      const meta = {
-        rowCount: rows.length,
-        latest: rows[0] || null,
-        userAgent: navigator.userAgent,
-        origin: location.origin,
-        path: location.pathname + location.search
-      };
-
-      // 1) Try Vercel relay first
-      try {
-        await sendViaRelay(blob, CSV_FILENAME, meta);
-        alert("Report sent successfully via relay.");
-        return;
-      } catch (e) {
-        console.warn("[send-report] Relay failed, falling back. Reason:", e);
-      }
-
-      // 2) Try Web Share with file (Android/TWA happy path)
-      try {
-        const file = new File([blob], CSV_FILENAME, { type: "text/csv" });
-        if (await webShareFile(file)) return;
-      } catch (_) {}
-
-      // 3) Fallbacks: download + open mailto with instructions
-      downloadBlob(blob, CSV_FILENAME);
-      mailtoFallback(CSV_FILENAME);
-    } catch (err) {
-      console.error("[send-report] fatal error:", err);
-      alert("Could not generate or send the report. Please use Export History CSV and email it manually.");
+      await sendViaRelay(csv, CSV_FILENAME, meta);  // <-- pass csvText here
+      alert("Report sent successfully via relay.");
+      return;
+    } catch (e) {
+      console.warn("[send-report] Relay failed, falling back. Reason:", e);
     }
+
+    // 2) Try Web Share (Android/TWA)
+    try {
+      const file = new File([blob], CSV_FILENAME, { type: "text/csv" });
+      if (await webShareFile(file)) return;
+    } catch (_) {}
+
+    // 3) Fallbacks: download + mailto
+    downloadBlob(blob, CSV_FILENAME);
+    mailtoFallback(CSV_FILENAME);
+  } catch (err) {
+    console.error("[send-report] fatal error:", err);
+    alert("Could not generate or send the report. Please use Export History CSV and email it manually.");
   }
+}
+
 
   // ===== WIRE UP BUTTON =====
   function ready(fn){ document.readyState !== "loading" ? fn() : document.addEventListener("DOMContentLoaded", fn); }
