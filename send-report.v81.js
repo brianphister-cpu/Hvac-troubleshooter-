@@ -13,22 +13,107 @@
   const BUTTON_ID      = "sendReportBtn";
 
   // ===== CSV BUILD (same column order as your exports) =====
-  const CSV_ORDER = [
-    "time","appVersion","refrig","systemType",
-    "indoorDb","indoorWb","outdoorDb","targetSH","targetSC",
-    "suctionP","suctionT","liquidP","liquidT","supplyT","returnT",
-    "deltaT","evapSat","condSat","superheat","subcool",
-    "suggestedDiagnosis","actualDiagnosis","confPct","learningOn",
-    "testerInitials","deltaTSource","rulesFired","valveNote"
-  ];
-  function loadHist(){ try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch { return []; } }
-  function csvEscape(v){ if (v==null) return ""; const s=String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
-  function buildCSV(rows){
-    const header = CSV_ORDER.join(",") + "\n";
-    if (!rows || !rows.length) return header;
-    const body = rows.map(r => CSV_ORDER.map(k => csvEscape(r[k])).join(",")).join("\n");
-    return header + body + "\n";
+  // ===== CSV (v8.2 learning-ready) =====
+
+// 1) Existing columns (unchanged order)
+const BASE_ORDER = [
+  "time","appVersion","refrig","systemType",
+  "indoorDb","indoorWb","outdoorDb","targetSH","targetSC",
+  "suctionP","suctionT","liquidP","liquidT","supplyT","returnT",
+  "deltaT","evapSat","condSat","superheat","subcool",
+  "suggestedDiagnosis","actualDiagnosis","confPct","learningOn",
+  "testerInitials","deltaTSource","rulesFired","valveNote"
+];
+
+// 2) New learning columns (safe to be blank if not present yet)
+const LEARNING_FIELDS = [
+  // Identification & timing
+  "caseID","snapshotLabel","timestampISO",
+
+  // Tech & equipment
+  "technicianName","brand","model","serial",
+
+  // Operation & environment
+  "mode","meteringDevice","altitudeFt","humidityPct","outdoorWB",
+  "cfm","staticPressureInH2O","filterCondition","coilCondition",
+
+  // Derived / trend-friendly
+  "dSuperheat_dt","dSubcool_dt","dDeltaT_dt","chargeDeviationIndex"
+];
+
+// 3) Final CSV header order: legacy first, then learning fields
+const CSV_ORDER = [...BASE_ORDER, ...LEARNING_FIELDS];
+
+function csvEscape(v){
+  if (v == null) return "";
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+
+// Normalize one history row: keep old keys, add new keys (best-effort mapping)
+function normalizeRow(r){
+  const out = { ...r };
+
+  // Timestamp (ISO) for analytics
+  if (!out.timestampISO) {
+    // use stored time string if present, else now
+    const t = (typeof out.time === "string") ? new Date(out.time) : new Date();
+    out.timestampISO = isNaN(t.getTime()) ? "" : t.toISOString();
   }
+
+  // Identification
+  out.caseID        = r.caseID || r.caseId || r.case || "";
+  out.snapshotLabel = r.snapshotLabel || r.snapLabel || r.snapshot || "T0";
+
+  // Tech & equipment
+  out.technicianName = r.technicianName || r.testerInitials || "";
+  out.brand          = r.brand || "";
+  out.model          = r.model || "";
+  out.serial         = r.serial || "";
+
+  // Operation & environment
+  out.mode            = r.mode || "cool";
+  // Map your systemType to a metering device label (helps analytics)
+  // txv/eev/fixed → human readable
+  const st = (r.systemType || "").toLowerCase();
+  out.meteringDevice  = r.meteringDevice ||
+                        (st === "txv" ? "TXV" : st === "eev" ? "EEV" : st === "fixed" ? "Fixed" : "");
+  out.altitudeFt      = r.altitudeFt || r.altitude || "";
+  out.humidityPct     = r.humidityPct || r.rh || "";
+  out.outdoorWB       = r.outdoorWb || r.outdoorWB || "";
+
+  // Air side / airflow
+  out.cfm                 = r.cfm || r.airflowCFM || "";
+  out.staticPressureInH2O = r.staticPressureInH2O || r.static || "";
+  out.filterCondition     = r.filterCondition || ""; // e.g., clean/dirty/unknown
+  out.coilCondition       = r.coilCondition || "";   // e.g., clean/dirty/iced
+
+  // Trend placeholders (compute in analytics later)
+  out.dSuperheat_dt        = r.dSuperheat_dt || "";
+  out.dSubcool_dt          = r.dSubcool_dt || "";
+  out.dDeltaT_dt           = r.dDeltaT_dt || "";
+  out.chargeDeviationIndex = r.chargeDeviationIndex || "";
+
+  // High-side naming helper (optional): if you prefer discharge terms
+  // You already store liquidP/liquidT. If you also log dischargeP/T in future, leave both.
+  // out.dischargeP = r.dischargeP || r.liquidP || "";
+  // out.dischargeT = r.dischargeT || r.liquidT || "";
+
+  return out;
+}
+
+function buildCSV(rows){
+  const header = CSV_ORDER.join(",") + "\n";
+  if (!rows || !rows.length) return header;
+
+  // Normalize then serialize
+  const lines = rows.map(r => {
+    const n = normalizeRow(r);
+    return CSV_ORDER.map(k => csvEscape(n[k])).join(",");
+  });
+
+  return header + lines.join("\n") + "\n";
+}
 
   // ===== HELPERS =====
   async function webShareFile(file){
