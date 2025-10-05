@@ -183,6 +183,15 @@
           <ul id="nextSteps" style="margin-top:6px"></ul>
         </div>
       </div>
+<!-- ===== CASE ID / SNAPSHOT / TECH INFO ===== -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0">
+  <input id="snapshotLabel" placeholder="Snapshot (default T0)"
+         style="padding:8px;border:1px solid #dfeaf5;border-radius:10px">
+  <input id="technicianName" placeholder="Technician name"
+         style="padding:8px;border:1px solid #dfeaf5;border-radius:10px">
+  <button class="btn secondary" id="newCaseBtn">New Case ID</button>
+  <span id="caseIdBadge" class="badge">Case: —</span>
+</div>
 
       <div class="section-title" style="margin-top:10px">History</div>
       <div class="panel" style="padding:12px">
@@ -801,6 +810,42 @@
 })();
 </script>
 <script src="./send-report.v81.js?v=5"></script>
+<script>
+// ===== CASE ID / SNAPSHOT / TECH INFO HELPERS =====
+const CASE_KEY = 'hvac_active_case';
+const TECH_KEY = 'hvac_tech_name';
+
+function getOrCreateCaseId(){
+  let id = localStorage.getItem(CASE_KEY);
+  if (!id){
+    const d=new Date(), y=String(d.getFullYear()).slice(-2);
+    const j=Math.floor((d - new Date(d.getFullYear(),0,0))/86400000);
+    const slug=Math.random().toString(36).slice(2,6).toUpperCase();
+    id = `${y}${String(j).padStart(3,'0')}-${slug}`;
+    localStorage.setItem(CASE_KEY, id);
+  }
+  return id;
+}
+function newCaseId(){ localStorage.removeItem(CASE_KEY); return getOrCreateCaseId(); }
+function getSnapshotLabel(){ const el=document.getElementById('snapshotLabel'); return (el&&el.value.trim())||'T0'; }
+function getTechName(){ const el=document.getElementById('technicianName'); return (el&&el.value.trim()) || (localStorage.getItem(TECH_KEY)||''); }
+function setTechName(v){ localStorage.setItem(TECH_KEY, v||''); }
+
+// Show ID and remember tech name
+(function initCaseUi(){
+  const badge=document.getElementById('caseIdBadge');
+  const btn=document.getElementById('newCaseBtn');
+  const tech=document.getElementById('technicianName');
+
+  if (badge) badge.textContent = 'Case: '+getOrCreateCaseId();
+  if (btn) btn.onclick = ()=>{ const id=newCaseId(); if(badge) badge.textContent='Case: '+id; };
+  if (tech){
+    const saved=localStorage.getItem(TECH_KEY)||'';
+    if (!tech.value && saved) tech.value=saved;
+    tech.addEventListener('change', ()=> setTechName(tech.value.trim()));
+  }
+})();
+</script>
 
 </body>
 </html>
