@@ -1,4 +1,4 @@
-<script>
+
 /*!
  * HVAC Troubleshooter Pro — Send Report v8.1 (Vercel relay first)
  * Order: 1) POST to Vercel relay, 2) Web Share (files), 3) Download + mailto.
@@ -133,4 +133,4 @@
     console.log("[send-report.v81] wired to #"+BUTTON_ID, "→ relay first:", RELAY_ENDPOINT);
   });
 })();
-</script>
+
