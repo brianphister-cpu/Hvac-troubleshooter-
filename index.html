@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>HVAC Troubleshooter Pro</title>
+<title>HVAC Troubleshooter — Pro</title>
 <link rel="manifest" href="/Hvac-troubleshooter-/manifest.json">
 <link rel="icon" href="/Hvac-troubleshooter-/icon-192.png">
 <meta name="theme-color" content="#eaf2fb" />
@@ -40,19 +40,21 @@
   .badge.bad{color:#fff;background:#b00020;border-color:#b00020}
   #stickyActions{position:sticky;bottom:0;z-index:10;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);padding-top:8px}
   .tip{font-size:12px;color:#56728a}
+
+  /* Modals */
   #whyModal,#coachModal,#playbackModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
   #whyCard,#coachCard,#playbackCard{max-width:900px;margin:6% auto;background:#fff;border-radius:14px;border:1px solid #dfeaf5;padding:14px}
   #coachCard{max-width:720px}
   #playbackCard{max-width:780px}
 
+  /* Compare panel + close */
   #comparePanel { margin-top: 10px; }
   table.compare { width:100%; border-collapse:collapse; font-size:13px }
   table.compare th, table.compare td { border:1px solid var(--line); padding:6px; text-align:center }
   table.compare th { background:#f3f8ff }
+  .compare-head { display:flex; align-items:center; justify-content:space-between; }
 
-  .playback-controls button{margin-right:6px}
-  .playback-meta{color:#56728a;font-size:12px;margin-top:6px}
-
+  /* Case ID row with inline button */
   .case-row{display:grid;grid-template-columns:1fr auto;gap:8px}
 </style>
 </head>
@@ -61,7 +63,7 @@
   <header>
     <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
     <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.5</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
+      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.0.6</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
       <div class="tip"><strong>Please use tool to diagnose issues, confirm which diagnosis is correct and click “Send Report” to share data with Administrator.</strong></div>
     </div>
     <button id="installBtn">Install App</button>
@@ -94,7 +96,7 @@
 
       <div class="section-title">Refrigerant Cycle</div>
       <div class="panel" style="padding:12px">
-        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.5" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
+        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.0.6" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
       </div>
 
       <div class="section-title">Field Readings</div>
@@ -130,9 +132,6 @@
         <div>
           <label>Snapshot Label</label><input id="snapshotLabelInput" placeholder="T0" value="T0">
         </div>
-        <div>
-          <label>Technician Name</label><input id="technicianName" placeholder="Your name">
-        </div>
       </div>
 
       <div id="stickyActions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -144,11 +143,14 @@
         </select>
         <button class="btn secondary" id="confirmBtn">Confirm</button>
         <button class="btn secondary" id="compareBtn" title="Compare snapshots in this Case ID">Compare Case</button>
-        <button class="btn secondary" id="playbackBtn" title="Playback snapshots in this Case ID">Playback</button>
+        <button class="btn secondary" id="playbackBtn" title="Playback snapshots in this Case ID">Chart</button>
       </div>
 
       <div id="comparePanel" class="panel" style="display:none;padding:12px">
-        <div class="section-title">Case Compare</div>
+        <div class="compare-head">
+          <div class="section-title" style="margin:0">Case Compare</div>
+          <button id="compareClose" class="btn secondary" style="padding:6px 10px">Close</button>
+        </div>
         <div id="compareSummary" class="tip"></div>
         <div id="compareTableWrap"></div>
       </div>
@@ -186,6 +188,16 @@
         </div>
       </div>
 
+      <!-- Tech + snapshot quick controls that persist -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0">
+        <input id="snapshotLabel" placeholder="Snapshot (default T0)"
+               style="padding:8px;border:1px solid #dfeaf5;border-radius:10px">
+        <input id="technicianName" placeholder="Technician name"
+               style="padding:8px;border:1px solid #dfeaf5;border-radius:10px">
+        <button class="btn secondary" id="newCaseBtn2">New Case ID</button>
+        <span id="caseIdBadge" class="badge">Case: —</span>
+      </div>
+
       <div class="section-title" style="margin-top:10px">History</div>
       <div class="panel" style="padding:12px">
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px">
@@ -199,12 +211,12 @@
   </div>
 
   <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build <strong>v8.0.5</strong> · Case New-ID button · Playback charts restored · Confidence alignment · Excel-friendly CSV · Full confirm list · PT loader hardened.
+    Build <strong>v8.0.6</strong> · Coach/Why close fixed · Playback simplified to charts · Compare close toggle · NaN guards · CSV/confirm list intact · PT loader hardened.
   </footer>
 </div>
 
-<!-- Reasoning Modal -->
-<div id="whyModal">
+<!-- Why Modal -->
+<div id="whyModal" aria-hidden="true">
   <div id="whyCard" role="dialog" aria-modal="true" aria-labelledby="whyTitle">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <strong id="whyTitle">Why this diagnosis?</strong>
@@ -215,7 +227,7 @@
 </div>
 
 <!-- Coach Modal -->
-<div id="coachModal">
+<div id="coachModal" aria-hidden="true">
   <div id="coachCard" role="dialog" aria-modal="true" aria-labelledby="coachTitle">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <strong id="coachTitle">Next-Best-Action Coach</strong>
@@ -225,38 +237,31 @@
   </div>
 </div>
 
-<!-- Playback Modal -->
-<div id="playbackModal">
+<!-- Playback Modal (chart-only) -->
+<div id="playbackModal" aria-hidden="true">
   <div id="playbackCard" role="dialog" aria-modal="true" aria-labelledby="playbackTitle">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <strong id="playbackTitle">Case Playback</strong>
+      <strong id="playbackTitle">Case Chart</strong>
       <button id="playbackClose" class="btn secondary" style="padding:6px 10px">Close</button>
     </div>
-    <div class="playback-controls" style="margin-top:8px">
-      <button class="btn secondary" id="pbPrev">◀ Prev</button>
-      <button class="btn secondary" id="pbPlay">▶ Play</button>
-      <button class="btn secondary" id="pbPause" style="display:none">⏸ Pause</button>
-      <button class="btn secondary" id="pbNext">Next ▶</button>
-      <select id="pbJump" style="margin-left:8px;padding:8px;border-radius:10px;border:1px solid var(--line)"></select>
-    </div>
-    <div id="playbackMeta" class="playback-meta"></div>
+    <div id="playbackMeta" class="tip" style="margin-top:4px"></div>
     <div style="margin-top:10px">
       <canvas id="pbChartPress" width="720" height="260" style="width:100%;max-width:720px;border:1px solid var(--line);border-radius:12px;background:#fff"></canvas>
       <div style="height:8px"></div>
       <canvas id="pbChartTemps" width="720" height="260" style="width:100%;max-width:720px;border:1px solid var(--line);border-radius:12px;background:#fff"></canvas>
-      <div class="tip" style="margin-top:6px">Pressures scale 0–600 psig; Temps (SH/SC/ΔT) scale 0–60°F. Hover labels show values per snapshot.</div>
+      <div class="tip" style="margin-top:6px">Pressures scale 0–600 psig; Temps (SH/SC/ΔT) scale 0–60°F.</div>
     </div>
   </div>
 </div>
 
 <script>
 (function(){
-  const BUILD_ID = '8.0.5';
+  const BUILD_ID = '8.0.6';
   const SUBPATH = '/Hvac-troubleshooter-/';
-  const TECH_KEY = 'hvac_tech_name';
   const $ = (id)=>document.getElementById(id);
-  const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return isNaN(n)?null:n; };
-  const round1 = (n)=> n==null?null:Math.round(n*10)/10;
+  const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return Number.isFinite(n)?n:null; };
+  const round1 = (n)=> Number.isFinite(n)? Math.round(n*10)/10 : null;
+  const nz = (n)=> Number.isFinite(n)? n : null;
 
   const BASE_TOL = { sh:4, sc:4, evap:4, dt:5 };
   const TARGETS = { evapSat:40, deltaT:20 };
@@ -271,12 +276,10 @@
 
   function timeout(ms){ return new Promise((_,rej)=> setTimeout(()=>rej(new Error('timeout')),ms)); }
   async function getJSON(url){
-    try {
-      const res = await Promise.race([fetch(url,{cache:'reload'}), timeout(4500)]);
-      if(!res || !res.ok) throw new Error('http '+(res && res.status));
-      const text = await res.text();
-      return JSON.parse(text);
-    } catch(e) { throw e; }
+    const res = await Promise.race([fetch(url,{cache:'reload'}), timeout(4500)]);
+    if(!res || !res.ok) throw new Error('http '+(res && res.status));
+    const txt = await res.text();
+    return JSON.parse(txt);
   }
 
   async function initRefrigerants(){
@@ -312,7 +315,7 @@
   }
 
   function tFromPsig(ref, psig){
-    const tab = PT[ref] || PT_FALLBACK['R410A']; if(!tab || !tab.length || psig==null) return null;
+    const tab = PT[ref] || PT_FALLBACK['R410A']; if(!tab || !tab.length || !Number.isFinite(psig)) return null;
     if(psig <= tab[0].p) return tab[0].t;
     if(psig >= tab[tab.length-1].p) return tab[tab.length-1].t;
     for(let i=0;i<tab.length-1;i++){ const a=tab[i], b=tab[i+1]; if(psig>=a.p && psig<=b.p){ const f=(psig-a.p)/(b.p-a.p); return a.t + f*(b.t-a.t); } }
@@ -341,19 +344,19 @@
   }
 
   function diagnoseAll(d){
-    const evapSat = tFromPsig(d.refrig, d.suctionP);
-    const condSat = tFromPsig(d.refrig, d.liquidP);
-    const superheat = (d.suctionT!=null && evapSat!=null)? d.suctionT - evapSat : null;
-    const subcool  = (d.liquidT!=null && condSat!=null)?  condSat - d.liquidT : null;
+    const evapSat = tFromPsig(d.refrig, nz(d.suctionP));
+    const condSat = tFromPsig(d.refrig, nz(d.liquidP));
+    const superheat = (Number.isFinite(d.suctionT) && evapSat!=null)? d.suctionT - evapSat : null;
+    const subcool  = (Number.isFinite(d.liquidT) && condSat!=null)?  condSat - d.liquidT : null;
     let deltaT = null, deltaTSource='—';
-    if (d.deltaTManual!=null){ deltaT = d.deltaTManual; deltaTSource='manual'; }
-    else if (d.supplyT!=null && d.returnT!=null){ deltaT = d.returnT - d.supplyT; deltaTSource='calc'; }
+    if (Number.isFinite(d.deltaTManual)){ deltaT = d.deltaTManual; deltaTSource='manual'; }
+    else if (Number.isFinite(d.supplyT) && Number.isFinite(d.returnT)){ deltaT = d.returnT - d.supplyT; deltaTSource='calc'; }
 
     const det = {
       evapSat: round1(evapSat), condSat: round1(condSat),
-      superheat: superheat==null?null:round1(superheat),
-      subcool: subcool==null?null:round1(subcool),
-      deltaT: deltaT==null?null:round1(deltaT), deltaTSource
+      superheat: round1(superheat),
+      subcool: round1(subcool),
+      deltaT: round1(deltaT), deltaTSource
     };
 
     const causes = {
@@ -393,16 +396,11 @@
       else if(dc <= -4){ causes['Undercharge (low refrigerant)'] += 12; rules.push('Low SC suggests undercharge or flashing'); }
     }
 
-    if(d.suctionP!=null && d.liquidP!=null){
+    if(Number.isFinite(d.suctionP) && Number.isFinite(d.liquidP)){
       if(d.suctionP < 105 && d.liquidP < 320){ causes['Undercharge (low refrigerant)'] += 12; rules.push('Low low-side & low high-side ⇒ likely undercharge'); }
       if(d.suctionP < 105 && d.liquidP > 380){ causes['Low airflow across evaporator'] += 10; causes['Non-condensables (air in system)'] += 8; rules.push('Low suction + high head ⇒ airflow issue or non-condensables'); }
       if(d.suctionP > 160 && d.liquidP < 330){ causes['Compressor mechanical issue (valves/leak)'] += 16; rules.push('High suction + normal/low head ⇒ compressor valves/leak'); }
       if(d.suctionP > 160 && d.liquidP > 480){ causes['Overcharge (too much refrigerant)'] += 10; causes['Non-condensables (air in system)'] += 8; rules.push('High suction + very high head ⇒ overcharge or air'); }
-    }
-
-    if(det.deltaT!=null){
-      if(det.deltaT < 12){ causes['Low airflow across evaporator'] += 18; rules.push('ΔT < 12°F ⇒ airflow/latent load issue first'); }
-      else if(det.deltaT > 28){ causes['Low airflow across evaporator'] += 8; rules.push('ΔT > 28°F ⇒ check airflow / sizing'); }
     }
 
     let ranked = Object.keys(causes).map(k=>({cause:k,score:causes[k]})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
@@ -490,7 +488,7 @@
   function currentSnapshotLabel(){ const i=$('snapshotLabelInput'); return (i && i.value.trim())?i.value.trim():'T0'; }
 
   function ensureOption(selectEl, value){
-    if (!selectEl) return;
+    if (!selectEl || !value) return;
     const exists = Array.from(selectEl.options).some(o=>o.value===value);
     if (!exists){ const o=document.createElement('option'); o.value=value; o.textContent=value.replace('R','R-'); selectEl.appendChild(o); }
   }
@@ -505,8 +503,7 @@
       supplyT: toNum(($('supplyT')||{}).value), returnT: toNum(($('returnT')||{}).value),
       deltaTManual: toNum(($('deltaTManual')||{}).value),
       caseId: (($('caseId')||{}).value||'').trim(),
-      snapshotLabel: currentSnapshotLabel(),
-      technicianName: (($('technicianName')||{}).value||'').trim()
+      snapshotLabel: currentSnapshotLabel()
     };
   }
 
@@ -519,11 +516,10 @@
     setVal('targetSH', s.targetSH); setVal('targetSC', s.targetSC);
     setVal('suctionP', s.suctionP); setVal('suctionT', s.suctionT);
     setVal('liquidP', s.liquidP);  setVal('liquidT', s.liquidT);
-    setVal('supplyT', s.supplyT);   setVal('returnT', s.returnT);
+    setVal('supplyT', s.supplyT);  setVal('returnT', s.returnT);
     setVal('deltaTManual', s.deltaT);
     const sl = $('snapshotLabelInput'); if (sl) sl.value = s.snapshotLabel || sl.value || 'T0';
     const ci = $('caseId'); if (ci) ci.value = s.caseId || ci.value || '';
-    const tn = $('technicianName'); if (tn && s.technicianName) tn.value = s.technicianName;
     const d=readInputs(); const r=diagnoseAll(d); renderResults(r);
   }
 
@@ -533,7 +529,7 @@
     list.innerHTML='';
     a.forEach((h,i)=>{
       const d=document.createElement('div'); d.className='hist';
-      d.innerHTML = `<div><strong>${h.refrig||''}</strong> · ${h.time||''} · <em>${h.caseId||'—'}/${h.snapshotLabel||'—'}</em>${h.technicianName? ' · '+h.technicianName : ''}<br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP||''} ST:${h.suctionT||''} · LP:${h.liquidP||''} LT:${h.liquidT||''} · ΔT:${h.deltaT??'—'} (${h.deltaTSource||'—'}) · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct||0}%</span></div>`;
+      d.innerHTML = `<div><strong>${h.refrig||''}</strong> · ${h.time||''} · <em>${h.caseId||'—'}/${h.snapshotLabel||'—'}</em><br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP??''} ST:${h.suctionT??''} · LP:${h.liquidP??''} LT:${h.liquidT??''} · ΔT:${h.deltaT??'—'} (${h.deltaTSource||'—'}) · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct||0}%</span></div>`;
       const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
       del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); };
       d.appendChild(del); list.appendChild(d);
@@ -544,7 +540,6 @@
     const cols = [
       ['snapshot','Snapshot'],
       ['time','Time'],
-      ['technicianName','Tech'],
       ['suctionP','Suction P (psig)'],
       ['liquidP','Liquid P (psig)'],
       ['evapSat','Evap Sat (°F)'],
@@ -562,7 +557,6 @@
       const vals = {
         snapshot: snap,
         time: r.time || '—',
-        technicianName: r.technicianName || '—',
         suctionP: r.suctionP ?? '—',
         liquidP: r.liquidP ?? '—',
         evapSat: r.evapSat ?? '—',
@@ -579,7 +573,7 @@
     return '<table class="compare">'+header+body+'</table>';
   }
 
-  // Simple canvas plotting helpers
+  // Canvas chart helpers (chart-only playback)
   function drawGrid(ctx, w, h, xPad, yPad, yMax, yStep, label){
     ctx.clearRect(0,0,w,h);
     ctx.fillStyle = '#0a1e2e'; ctx.font = '12px Inter, system-ui, Arial';
@@ -596,7 +590,7 @@
     const xStep = (w - 2*xPad) / Math.max(1, n-1);
     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
     values.forEach((v,i)=>{
-      if (v==null) return;
+      if (!Number.isFinite(v)) return;
       const x = xPad + i * xStep;
       const y = h - yPad - Math.max(0, Math.min(1, v / yMax)) * (h - 2*yPad);
       if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
@@ -604,32 +598,30 @@
     ctx.stroke();
     ctx.fillStyle = color;
     values.forEach((v,i)=>{
-      if (v==null) return;
+      if (!Number.isFinite(v)) return;
       const x = xPad + i * xStep;
       const y = h - yPad - Math.max(0, Math.min(1, v / yMax)) * (h - 2*yPad);
       ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
     });
-    // X labels
     ctx.fillStyle = '#56728a'; ctx.font = '11px Inter, system-ui, Arial';
     xLabels.forEach((lbl,i)=>{ const x = xPad + i * xStep; ctx.fillText(lbl, x-12, h-6); });
-    // Legend
-    ctx.fillStyle = color; ctx.fillRect(w-160, 10, 10, 10);
-    ctx.fillStyle = '#0a1e2e'; ctx.fillText(label, w-145, 20);
+    ctx.fillStyle = color; ctx.fillRect(w-140, 10, 10, 10);
+    ctx.fillStyle = '#0a1e2e'; ctx.fillText(label, w-125, 20);
   }
 
-  // Playback globals
-  let pbTimer = null; let pbIndex = 0; let pbRows = [];
+  // Playback state
+  let pbRows = [];
 
   function refreshPlaybackCharts(){
     const press = document.getElementById('pbChartPress'); const tctx = press.getContext('2d');
     const temps = document.getElementById('pbChartTemps'); const uctx = temps.getContext('2d');
     const w = press.width, h = press.height; const xPad=40, yPad=26;
     const labels = pbRows.map(r=> (r.snapshotLabel || '').toString());
-    const suction = pbRows.map(r=> r.suctionP!=null? Number(r.suctionP): null);
-    const liquid  = pbRows.map(r=> r.liquidP!=null?  Number(r.liquidP):  null);
-    const sh = pbRows.map(r=> r.superheat!=null? Number(r.superheat): null);
-    const sc = pbRows.map(r=> r.subcool!=null?  Number(r.subcool):  null);
-    const dt = pbRows.map(r=> r.deltaT!=null?   Number(r.deltaT):   null);
+    const suction = pbRows.map(r=> Number.isFinite(+r.suctionP)? +r.suctionP : null);
+    const liquid  = pbRows.map(r=> Number.isFinite(+r.liquidP)?  +r.liquidP  : null);
+    const sh = pbRows.map(r=> Number.isFinite(+r.superheat)? +r.superheat : null);
+    const sc = pbRows.map(r=> Number.isFinite(+r.subcool)?  +r.subcool  : null);
+    const dt = pbRows.map(r=> Number.isFinite(+r.deltaT)?   +r.deltaT   : null);
 
     drawGrid(tctx, w, h, xPad, yPad, 600, 100, 'Pressures (psig)');
     plotSeries(tctx, w, h, xPad, yPad, 600, suction, '#1d9df5', 'Suction', labels);
@@ -641,16 +633,6 @@
     plotSeries(uctx, w, h, xPad, yPad, 60, dt, '#7d5bed', 'ΔT', labels);
   }
 
-  function showSnapshot(i){
-    if (!pbRows.length) return;
-    if (i<0) i=pbRows.length-1; if (i>=pbRows.length) i=0;
-    pbIndex = i; const s = pbRows[pbIndex];
-    $('pbJump').value = String(pbIndex);
-    $('playbackMeta').textContent = `Snapshot ${pbIndex+1}/${pbRows.length} — ${s.snapshotLabel||'—'} — ${s.time||''}`;
-    applySnapshotToForm(s);
-    refreshPlaybackCharts();
-  }
-
   function openPlayback(){
     const caseInput = ($('caseId')||{}).value||'';
     if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
@@ -658,31 +640,10 @@
     if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
     const labelOrder = {'t0':0,'t+10':1,'t+20':2,'T0':0,'T+10':1,'T+20':2};
     all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
-    pbRows = all; pbIndex = 0;
-    const jump = $('pbJump'); jump.innerHTML = '';
-    pbRows.forEach((r,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=(r.snapshotLabel||'—')+' — '+(r.time||''); jump.appendChild(o); });
+    pbRows = all;
     $('playbackMeta').textContent = `Loaded ${pbRows.length} snapshot(s) for Case ${caseInput}`;
     $('playbackModal').style.display='block';
-    wirePlaybackControls();
-    showSnapshot(0);
-  }
-
-  function wirePlaybackControls(){
-    $('pbPrev').onclick = ()=> showSnapshot(pbIndex-1);
-    $('pbNext').onclick = ()=> showSnapshot(pbIndex+1);
-    $('pbPlay').onclick = ()=> startPlayback();
-    $('pbPause').onclick = ()=> stopPlayback();
-    $('pbJump').onchange = (e)=> showSnapshot(parseInt(e.target.value,10)||0);
-  }
-
-  function startPlayback(){
-    if (pbTimer) return;
-    $('pbPlay').style.display='none'; $('pbPause').style.display='inline-block';
-    pbTimer = setInterval(()=> showSnapshot(pbIndex+1), 1800);
-  }
-  function stopPlayback(){
-    if (!pbTimer) return; clearInterval(pbTimer); pbTimer=null;
-    $('pbPause').style.display='none'; $('pbPlay').style.display='inline-block';
+    refreshPlaybackCharts();
   }
 
   function newCaseId(){
@@ -690,7 +651,7 @@
     const y = String(d.getFullYear()).slice(-2);
     const m = String(d.getMonth()+1).padStart(2,'0');
     const day = String(d.getDate()).padStart(2,'0');
-    const rand = Math.floor(Math.random()*900)+100; // 3-digit
+    const rand = Math.floor(Math.random()*900)+100;
     return `${y}-${m}${day}-${rand}`;
   }
 
@@ -701,13 +662,13 @@
       const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
       const r=diagnoseAll(d);
       const entry = {
-        time: new Date().toLocaleString(), appVersion:'v8.0.5', refrig:d.refrig, systemType:d.systemType,
+        time: new Date().toLocaleString(), appVersion:'v8.0.6', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
         suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'',
         rulesFired:(r.rulesFired||[]).join(' | '),
-        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0', technicianName: d.technicianName || ''
+        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0'
       };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
     });
@@ -715,9 +676,9 @@
     const exportBtn=$('exportHist'); if(exportBtn) exportBtn.addEventListener('click', ()=>{
       const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
       const esc=(v)=>{ if(v==null) return ''; const s=String(v); return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-      const order=["time","appVersion","caseId","snapshotLabel","technicianName","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","deltaTSource","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","rulesFired"];
+      const order=["time","appVersion","caseId","snapshotLabel","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","deltaTSource","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","rulesFired"];
       const header=order.join(','); const body=rows.map(r=>order.map(k=>esc(r[k])).join(',')).join('\r\n'); const csv='\ufeff'+header+'\r\n'+body;
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_0_5.csv'; a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_0_6.csv'; a.click();
     });
 
     const clearBtn=$('clearHist'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } });
@@ -726,12 +687,12 @@
     if (confirmBtn) confirmBtn.addEventListener('click', ()=>{
       const sel = $('confirmSelect'); if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
       const d=readInputs(); const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.5', refrig:d.refrig, systemType:d.systemType,
+      const entry = { time: new Date().toLocaleString(), appVersion:'v8.0.6', refrig:d.refrig, systemType:d.systemType,
         indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
         suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
         evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
         suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:true, testerInitials:'', rulesFired:(r.rulesFired||[]).join(' | '),
-        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0', technicianName: d.technicianName || '' };
+        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0' };
       const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist(); alert('Confirmation recorded.');
     });
 
@@ -748,71 +709,91 @@
       $('compareSummary').textContent = `Comparing ${all.length} snapshot(s) for Case ${caseInput}`;
       $('comparePanel').style.display='block';
     });
+    const compareClose = $('compareClose'); if (compareClose){ compareClose.onclick = ()=>{ $('comparePanel').style.display='none'; }; }
 
     const playbackBtn = $('playbackBtn');
     if (playbackBtn) playbackBtn.addEventListener('click', ()=> openPlayback());
 
     const pbModal = $('playbackModal'); const pbClose = $('playbackClose');
-    if (pbModal && pbClose) { 
-      pbClose.onclick = ()=> pbModal.style.display='none';
-      pbModal.onclick = (e)=>{ if(e.target===pbModal) pbModal.style.display='none'; };
-      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && pbModal.style.display==='block') pbModal.style.display='none'; });
+    if (pbModal && pbClose) {
+      const hidePB = ()=> pbModal.style.display='none';
+      pbClose.onclick = hidePB;
+      pbModal.onclick = (e)=>{ if(e.target===pbModal) hidePB(); };
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && pbModal.style.display==='block') hidePB(); });
     }
 
-    const whyModal = $('whyModal'), whyClose = $('whyClose');
-    if (whyModal && whyClose){ 
-      whyClose.onclick = ()=> whyModal.style.display='none';
-      whyModal.onclick = (e)=>{ if(e.target===whyModal) whyModal.style.display='none'; };
-      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && whyModal.style.display==='block') whyModal.style.display='none'; });
+    const whyBtn = $('whyBtn'); const whyModal = $('whyModal'); const whyClose = $('whyClose');
+    if (whyBtn && whyModal && whyClose){
+      whyBtn.onclick = ()=>{
+        const d=readInputs();
+        if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter the four required readings first.'); return; }
+        const r=diagnoseAll(d);
+        const nums = reasoningLines(r.details, r.input);
+        const rules = (r.rulesFired||[]).map(x=>`<li>${x}</li>`).join('') || '<li>(no major rule triggers)</li>';
+        $('whyContent').innerHTML = `<div><strong>Numbers used</strong><ul>${nums.map(s=>`<li>${s}</li>`).join('')}</ul></div><div style="margin-top:8px"><strong>Rules that influenced this result</strong><ul>${rules}</ul></div>`;
+        whyModal.style.display='block';
+      };
+      const hideWhy = ()=> whyModal.style.display='none';
+      whyClose.onclick = hideWhy;
+      whyModal.onclick = (e)=>{ if(e.target===whyModal) hideWhy(); };
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && whyModal.style.display==='block') hideWhy(); });
     }
 
-    // New Case ID button
-    const newCaseBtn = $('newCaseBtn');
-    if (newCaseBtn) { newCaseBtn.onclick = ()=>{ const id=newCaseId(); const ci=$('caseId'); if(ci) ci.value=id; }; }
-
-    // Coach
-    const coachBtn = $('coachBtn');
-    if (coachBtn) coachBtn.onclick = ()=>{ const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter the four required readings first.'); return; }
-      const r=diagnoseAll(d); openCoach(r); };
-
-    // Remember technician name locally
-    const tn = $('technicianName');
-    if (tn){
-      const saved = localStorage.getItem(TECH_KEY)||'';
-      if (!tn.value && saved) tn.value = saved;
-      tn.addEventListener('change', ()=> localStorage.setItem(TECH_KEY, (tn.value||'').trim()));
-    }
+    // Case controls (footer quick row)
+    const newCaseBtn2 = $('newCaseBtn2'); if (newCaseBtn2) newCaseBtn2.onclick = ()=>{
+      const id=newCaseId(); const ci=$('caseId'); if(ci) ci.value=id; const badge=$('caseIdBadge'); if(badge) badge.textContent='Case: '+id;
+    };
   }
 
-  function openCoach(r){
-    const labels = r.ranked.map(c=>c.cause);
-    const scores = r.ranked.map(c=>c.pct/100);
-    const mx = Math.max(...scores, 0); const ex = scores.map(s=>Math.exp(s-mx)); const sum = ex.reduce((a,b)=>a+b,0)||1; const probs = ex.map(v=>v/sum);
-    const actions = [
-      { id:'check_airflow', label:'Measure evap airflow (CFM) or increase fan 10%', targets:['Low airflow across evaporator'] },
-      { id:'bleed_air', label:'Purge test for trapped air', targets:['Non-condensables (air in system)'] },
-      { id:'weigh_charge', label:'Weigh charge ±4–8 oz & observe SH/SC', targets:['Undercharge (low refrigerant)','Overcharge (too much refrigerant)','Restriction — metering device / drier'] },
-      { id:'txv_screen', label:'Inspect TXV inlet screen / bulb placement', targets:['Restriction — metering device / drier','TXV underfeeding (adjust superheat)'] },
-      { id:'condenser_coil', label:'Check condenser fan/coil cleanliness', targets:['Condenser airflow failure (fan out / slow)'] }
-    ];
-    function H(lambda){ return -lambda.reduce((s,q)=> s + (q>0?q*Math.log2(q):0),0); }
-    function expGain(a){
-      const set=new Set(a.targets||[]);
-      const imp=probs.map((p,i)=> set.has(labels[i]) ? p*1.35 : p*0.85);
-      const n=imp.reduce((x,y)=>x+y,0)||1; for(let i=0;i<imp.length;i++) imp[i]/=n;
-      return (H(probs) - (0.7*H(imp) + 0.3*H(probs)));
+  // Case/tech persistence helpers
+  const CASE_KEY = 'hvac_active_case';
+  const TECH_KEY = 'hvac_tech_name';
+  function getOrCreateCaseIdPersist(){
+    let id = localStorage.getItem(CASE_KEY);
+    if (!id){
+      const d=new Date(), y=String(d.getFullYear()).slice(-2);
+      const j=Math.floor((d - new Date(d.getFullYear(),0,0))/86400000);
+      const slug=Math.random().toString(36).slice(2,6).toUpperCase();
+      id = `${y}${String(j).padStart(3,'0')}-${slug}`;
+      localStorage.setItem(CASE_KEY, id);
     }
-    const ranked = actions.map(a=>({a, g:expGain(a)})).sort((x,y)=>y.g-x.g).slice(0,3);
-    const el = document.getElementById('coachContent'); const modal = document.getElementById('coachModal');
-    el.innerHTML = '<ul style="margin:0;padding-left:18px">' + ranked.map(function(i){ return '<li><strong>'+i.a.label+'</strong> — info gain '+(i.g*100).toFixed(1)+'%</li>'; }).join('') + '</ul>';
-    modal.style.display='block';
+    return id;
   }
+  (function initCaseUi(){
+    const badge=$('caseIdBadge');
+    const tech=$('technicianName');
+    if (badge) badge.textContent = 'Case: '+getOrCreateCaseIdPersist();
+    if (tech){
+      const saved=localStorage.getItem(TECH_KEY)||'';
+      if (!tech.value && saved) tech.value=saved;
+      tech.addEventListener('change', ()=> localStorage.setItem(TECH_KEY, (tech.value||'').trim()));
+    }
+  })();
 
-  // Boot
-  async function boot(){ await initRefrigerants(); renderHist(); initButtons(); }
+  async function boot(){
+    await initRefrigerants();
+    renderHist();
+    initButtons();
+    // Metric “tap-to-copy”
+    document.querySelectorAll('.metric').forEach(m=>{
+      const targetSel = m.getAttribute('data-copy'); if(!targetSel) return;
+      m.addEventListener('click', ()=>{
+        const el = document.querySelector(targetSel); if(!el) return;
+        const txt = el.textContent.replace(' °F','');
+        if (navigator.clipboard) navigator.clipboard.writeText(txt);
+        m.style.boxShadow = '0 0 0 2px rgba(47,123,255,0.4)'; setTimeout(()=> m.style.boxShadow='none', 250);
+      });
+    });
+  }
   boot();
 })();
 </script>
+
+<!-- Send Report (v8.0.6) -->
+<script src="./send-report.v81.js?v=6"></script>
+</body>
+</html>
+
 <script src="./send-report.v81.js?v=5"></script>
 </body>
 </html>
