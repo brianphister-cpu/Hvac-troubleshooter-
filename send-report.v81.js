@@ -1,25 +1,18 @@
 <script>
 /*!
- * HVAC Troubleshooter Pro — Send Report v8.1
- * - Web Share API (files) on Android/TWA with graceful fallbacks
- * - CSV column alignment identical to app history export
- * - Zero external deps; safe for GitHub Pages subpath
+ * HVAC Troubleshooter Pro — Send Report v8.1 (Vercel relay first)
+ * Order: 1) POST to Vercel relay, 2) Web Share (files), 3) Download + mailto.
+ * Drop-in: keep button id #sendReportBtn. No external deps.
  */
 (function () {
-  // ==== CONFIG ====
-  const SUPPORT_EMAIL = "Brian.phister@harrisairsystems.com";
-  const CSV_FILENAME  = "hvac_report.csv";
-  const HIST_KEY      = "hvac_hist_v7_4b"; // keep storage key for continuity
-  const BUTTON_ID     = "sendReportBtn";
+  // ===== CONFIG =====
+  const RELAY_ENDPOINT = "https://YOUR-VERCEL-APP.vercel.app/api/send-report"; // <-- PUT YOUR URL HERE
+  const SUPPORT_EMAIL  = "Brian.phister@harrisairsystems.com";
+  const CSV_FILENAME   = "hvac_report.csv";
+  const HIST_KEY       = "hvac_hist_v7_4b";    // keep storage key for continuity
+  const BUTTON_ID      = "sendReportBtn";
 
-  // ==== UTIL: History ====
-  function loadHist() {
-    try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); }
-    catch { return []; }
-  }
-
-  // ==== UTIL: CSV ====
-  // Order matches your v7.4+ exports (incl. deltaTSource, rulesFired, valveNote)
+  // ===== CSV BUILD (same column order as your exports) =====
   const CSV_ORDER = [
     "time","appVersion","refrig","systemType",
     "indoorDb","indoorWb","outdoorDb","targetSH","targetSC",
@@ -28,22 +21,17 @@
     "suggestedDiagnosis","actualDiagnosis","confPct","learningOn",
     "testerInitials","deltaTSource","rulesFired","valveNote"
   ];
-
-  function csvEscape(v) {
-    if (v == null) return "";
-    const s = String(v);
-    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
-
-  function buildCSV(rows) {
+  function loadHist(){ try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch { return []; } }
+  function csvEscape(v){ if (v==null) return ""; const s=String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+  function buildCSV(rows){
     const header = CSV_ORDER.join(",") + "\n";
-    if (!rows || !rows.length) return header; // empty log but valid CSV
+    if (!rows || !rows.length) return header;
     const body = rows.map(r => CSV_ORDER.map(k => csvEscape(r[k])).join(",")).join("\n");
     return header + body + "\n";
   }
 
-  // ==== SHARE / SEND FLOW ====
-  async function doWebShareWithFile(file) {
+  // ===== HELPERS =====
+  async function webShareFile(file){
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         files: [file],
@@ -54,68 +42,95 @@
     }
     return false;
   }
-
-  function triggerDownload(blob, filename) {
+  function downloadBlob(blob, name){
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 300);
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 300);
   }
-
-  function openMailtoFallback(filename) {
-    // mailto: cannot attach files — we prefill instructions instead
+  function mailtoFallback(name){
     const subject = encodeURIComponent("HVAC Troubleshooter Report");
     const body = encodeURIComponent(
-      "The CSV (" + filename + ") was downloaded. Please attach it to this email.\n\n" +
-      "If you don’t see it in the share sheet, check your Downloads folder."
+      "The CSV ("+name+") was downloaded. Please attach it to this email.\n\n" +
+      "If the share sheet did not appear, check your Downloads folder."
     );
-    const href = `mailto:${encodeURIComponent(SUPPORT_EMAIL)}?subject=${subject}&body=${body}`;
-    // target _self avoids being blocked in TWA
-    window.location.href = href;
+    window.location.href = `mailto:${encodeURIComponent(SUPPORT_EMAIL)}?subject=${subject}&body=${body}`;
   }
 
-  async function sendReport() {
-    try {
-      const rows = loadHist();
-      const csv = buildCSV(rows);
-      const blob = new Blob([csv], { type: "text/csv" });
-      const file = new File([blob], CSV_FILENAME, { type: "text/csv" });
+  // ===== VERCEL RELAY SEND =====
+  async function sendViaRelay(csvBlob, csvFilename, meta){
+    if (!RELAY_ENDPOINT || !/^https?:\/\//i.test(RELAY_ENDPOINT)) {
+      throw new Error("Relay endpoint not configured");
+    }
+    const fd = new FormData();
+    fd.append("file", new File([csvBlob], csvFilename, { type: "text/csv" }));
+    // Include useful metadata for your email template/logs:
+    fd.append("to", SUPPORT_EMAIL);
+    fd.append("subject", "HVAC Troubleshooter Pro — Field Report");
+    fd.append("message", "Attached: CSV export from HVAC Troubleshooter Pro.");
+    fd.append("meta", JSON.stringify(meta || {}));
 
-      // Try Web Share (Android/TWA happy path)
+    const res = await fetch(RELAY_ENDPOINT, {
+      method: "POST",
+      body: fd,
+      // CORS note: your Vercel function should send Access-Control-Allow-Origin: *
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(()=> "");
+      throw new Error("Relay returned "+res.status+" "+res.statusText+" :: "+txt);
+    }
+    return true;
+  }
+
+  // ===== MAIN ACTION =====
+  async function sendReport(){
+    try {
+      // Build CSV from history
+      const rows  = loadHist();
+      const csv   = buildCSV(rows);
+      const blob  = new Blob([csv], { type: "text/csv" });
+      // Minimal meta: include counters and latest case context if present
+      const meta = {
+        rowCount: rows.length,
+        latest: rows[0] || null,
+        userAgent: navigator.userAgent,
+        origin: location.origin,
+        path: location.pathname + location.search
+      };
+
+      // 1) Try Vercel relay first
       try {
-        const shared = await doWebShareWithFile(file);
-        if (shared) return;
-      } catch (_) {
-        // fall through to download + mailto
+        await sendViaRelay(blob, CSV_FILENAME, meta);
+        alert("Report sent successfully via relay.");
+        return;
+      } catch (e) {
+        console.warn("[send-report] Relay failed, falling back. Reason:", e);
       }
 
-      // Fallbacks: 1) download csv, 2) open mailto with instructions
-      triggerDownload(blob, CSV_FILENAME);
-      openMailtoFallback(CSV_FILENAME);
+      // 2) Try Web Share with file (Android/TWA happy path)
+      try {
+        const file = new File([blob], CSV_FILENAME, { type: "text/csv" });
+        if (await webShareFile(file)) return;
+      } catch (_) {}
+
+      // 3) Fallbacks: download + open mailto with instructions
+      downloadBlob(blob, CSV_FILENAME);
+      mailtoFallback(CSV_FILENAME);
     } catch (err) {
-      // As a last resort, show a simple alert with next steps
-      alert("Could not generate or share the report. Please export history CSV and email it manually.");
-      console.error("[send-report] error:", err);
+      console.error("[send-report] fatal error:", err);
+      alert("Could not generate or send the report. Please use Export History CSV and email it manually.");
     }
   }
 
-  // ==== WIRE UP ====
+  // ===== WIRE UP BUTTON =====
   function ready(fn){ document.readyState !== "loading" ? fn() : document.addEventListener("DOMContentLoaded", fn); }
-  ready(() => {
+  ready(()=>{
     const btn = document.getElementById(BUTTON_ID);
-    if (!btn) return;
-    // ensure single handler
-    btn.replaceWith(btn.cloneNode(true));
-    const freshBtn = document.getElementById(BUTTON_ID) || document.querySelector("#" + BUTTON_ID);
-    freshBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      sendReport();
-    }, { passive: false });
-    // Optional: small console breadcrumb for verification
-    console.log("[send-report.v81] wired to #"+BUTTON_ID);
+    if (!btn) { console.warn("[send-report] #"+BUTTON_ID+" not found"); return; }
+    const clone = btn.cloneNode(true); btn.parentNode.replaceChild(clone, btn); // remove old listeners
+    clone.addEventListener("click", (e)=>{ e.preventDefault(); sendReport(); }, { passive:false });
+    console.log("[send-report.v81] wired to #"+BUTTON_ID, "→ relay first:", RELAY_ENDPOINT);
   });
 })();
 </script>
