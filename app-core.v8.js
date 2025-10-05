@@ -440,7 +440,8 @@ technicianName: getTechName(),
         "evapSat","condSat","superheat","subcool",
         "suggestedDiagnosis","actualDiagnosis",
         "confPct","learningOn","testerInitials",
-        "rulesFired","valveNote"
+        "rulesFired","valveNote","caseID","snapshotLabel","technicianName"
+
       ];
       const csv=[order.join(',')].concat(rows.map(r=>order.map(k=>escape(r[k])).join(','))).join('\n');
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8.csv'; a.click();
