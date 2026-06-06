@@ -1,773 +1,240 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>HVAC Troubleshooter — Pro v8.1</title>
-<link rel="manifest" href="/Hvac-troubleshooter-/manifest.json">
-<link rel="icon" href="/Hvac-troubleshooter-/icon-192.png">
-<meta name="theme-color" content="#eaf2fb" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#09151d">
+<title>FieldSense HVAC Advanced</title>
 <style>
-  :root{ --bg:#f6fafd; --bg2:#ffffff; --panel:#ffffff; --ink:#0a1e2e; --muted:#5a748a; --line:#dfeaf5; --accent:#2f7bff; --cool:#1d9df5; --hot:#ff6a3d; --meter:#31c48d; --soft:#edf4fb; --bad:#b00020; }
-  html,body{margin:0;height:100%;font-family:Inter,system-ui,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--bg2));color:#0a1e2e}
-  .app{max-width:1200px;margin:18px auto;padding:18px}
-  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .logo{width:56px;height:56px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(30,100,200,0.12)}
-  .logo img{width:40px;height:40px;border-radius:10px}
-  h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.2px}
-  .ver{margin-left:6px;padding:2px 6px;border-radius:8px;background:#f0f6ff;border:1px solid var(--line);color:#2b5b7a;font-size:11px;font-weight:800;user-select:none;cursor:default}
-  #installBtn{display:none;margin-left:auto;padding:10px 14px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(90deg,#7eb5ff,#a8e0ff);color:#0a1c2a;cursor:pointer;box-shadow:0 6px 14px rgba(62,140,255,0.25)}
-  .main{display:grid;grid-template-columns:1.05fr 0.95fr;gap:18px;margin-top:18px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 26px rgba(10,30,50,0.06)}
-  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-  .form-grid.two-col{grid-template-columns:1fr 1fr}
-  label{display:block;font-size:12px;color:#5a748a;margin-bottom:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-  input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:#fff;color:#0c263b;font-size:15px}
-  input[type=number]{max-width:6.25ch}
-  .section-title{font-size:12px;color:#5a748a;margin:6px 0 8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
-  .btn{padding:12px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800}
-  .btn.primary{background:linear-gradient(90deg,#6fabff,#8fd4ff);color:#0a1c2a;box-shadow:0 8px 16px rgba(111,171,255,0.35)}
-  .btn.secondary{background:#f3f8ff;color:#0a1c2a;border:1px solid var(--line)}
-  .metric-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
-  .metric{background:var(--soft);border:1px solid var(--line);padding:10px;border-radius:12px;min-width:120px;cursor:pointer}
-  .metric .k{font-size:12px;color:#5a748a} .metric .v{font-weight:900}
-  .cause{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:#f6fbff;border:1px solid var(--line);margin-top:8px}
-  .bar{flex:1;height:10px;background:#e8f2fc;border-radius:6px;overflow:hidden}
-  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--cool),var(--hot))}
-  .history{max-height:260px;overflow:auto}
-  .hist{display:flex;justify-content:space-between;align-items:center;background:#f9fcff;border:1px solid var(--line);padding:8px;border-radius:10px;margin-top:6px}
-  .badge{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:8px;font-size:11px;border:1px solid var(--line);color:#2b5b7a}
-  .badge.bad{color:#fff;background:#b00020;border-color:#b00020}
-  #stickyActions{position:sticky;bottom:0;z-index:10;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);padding-top:8px}
-  .tip{font-size:12px;color:#56728a}
-  #whyModal,#coachModal,#playbackModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
-  #whyCard,#coachCard,#playbackCard{max-width:900px;margin:6% auto;background:#fff;border-radius:14px;border:1px solid #dfeaf5;padding:14px}
-  #coachCard{max-width:720px}
-  #playbackCard{max-width:780px}
-  #comparePanel { margin-top: 10px; display:none; }
-  table.compare { width:100%; border-collapse:collapse; font-size:13px }
-  table.compare th, table.compare td { border:1px solid var(--line); padding:6px; text-align:center }
-  table.compare th { background:#f3f8ff }
-  .case-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+:root{--navy:#09151d;--navy2:#132631;--ink:#12232d;--muted:#697b85;--line:#dbe4e7;--paper:#fff;--bg:#eef2f3;--teal:#177b72;--teal2:#def2ee;--blue:#286887;--amber:#a85a08;--amber2:#fff0d9;--red:#a63b3b;--red2:#fceaea;--green:#267158;--shadow:0 16px 44px rgba(9,28,39,.09)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif;line-height:1.45}button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh}.top{height:68px;padding:0 24px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;align-items:center;gap:12px}.logo{width:39px;height:39px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,#23958a,#12645d);font-weight:900}.brand h1{margin:0;font-size:17px}.brand p{margin:1px 0 0;color:#9db2bd;font-size:11px}.top-meta{display:flex;gap:9px;align-items:center;color:#b4c5cd;font-size:11px}.pill{padding:5px 9px;border:1px solid #30434e;border-radius:999px}.layout{max-width:1440px;margin:auto;display:grid;grid-template-columns:220px minmax(0,1fr) 365px;gap:18px;padding:18px}.rail,.panel,.inspector{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.rail{position:sticky;top:18px;padding:15px;height:calc(100vh - 104px)}.case-label{color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.case-id{margin:3px 0 16px;font-weight:900}.nav-step{width:100%;display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;text-align:left;border:0;background:transparent;color:#637681;padding:9px 7px;border-radius:9px;font-size:12px;font-weight:800}.nav-step span{width:27px;height:27px;display:grid;place-items:center;border-radius:50%;background:#edf2f3}.nav-step.active{background:var(--teal2);color:#155f59}.nav-step.active span{background:var(--teal);color:#fff}.nav-step.done{color:var(--green)}.rail-note{position:absolute;left:15px;right:15px;bottom:15px;padding:11px;border-radius:10px;background:#f4f7f7;color:var(--muted);font-size:10px}.panel{overflow:hidden}.stage{display:none}.stage.active{display:block}.stage-head{padding:24px 27px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.eyebrow{color:var(--teal);font-size:10px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.stage h2{margin:4px 0;font-size:24px;letter-spacing:-.025em}.lede{margin:0;color:var(--muted);font-size:13px;max-width:660px}.stage-body{padding:24px 27px}.section-title{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.08em}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.field label{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;color:#334a55;font-size:11px;font-weight:900}.field label em{color:#8b9aa2;font-style:normal;font-weight:600}.field input,.field select,.field textarea{width:100%;border:1px solid #cfdadd;border-radius:9px;background:#fbfcfc;padding:10px 11px;color:var(--ink);outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(23,123,114,.12);background:#fff}.field input.invalid{border-color:var(--red);background:var(--red2)}.help{margin-top:4px;color:#87969d;font-size:10px}.divider{height:1px;background:var(--line);margin:22px 0}.complaints{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.complaint{position:relative;border:1px solid var(--line);border-radius:11px;padding:13px;background:#fff}.complaint input{position:absolute;opacity:0}.complaint:has(input:checked){border-color:var(--teal);background:var(--teal2);box-shadow:0 0 0 2px rgba(23,123,114,.08)}.complaint strong{display:block;font-size:13px}.complaint small{display:block;margin-top:3px;color:var(--muted);font-size:10px}.checks{display:grid;gap:9px}.precheck{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:10px}.precheck input{margin-top:3px}.precheck strong{display:block;font-size:12px}.precheck small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.precheck select{width:125px;border:1px solid var(--line);border-radius:8px;padding:7px;background:#fff}.callout{padding:12px 14px;border-left:3px solid var(--amber);border-radius:8px;background:var(--amber2);color:#70410f;font-size:11px}.actions{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:17px 27px;border-top:1px solid var(--line);background:#fafbfb}.action-group{display:flex;gap:8px}.btn{border:0;border-radius:9px;padding:10px 14px;font-weight:900;font-size:12px}.btn.primary{background:var(--teal);color:#fff;box-shadow:0 7px 17px rgba(23,123,114,.2)}.btn.secondary{background:#edf2f3;color:#29434f;border:1px solid #d8e1e4}.btn.ghost{background:transparent;color:var(--muted)}.btn:disabled{opacity:.45;cursor:not-allowed}.measurement-groups{display:grid;gap:18px}.measure-group{border:1px solid var(--line);border-radius:12px;padding:16px}.measure-group h3{margin:0 0 3px;font-size:14px}.measure-group>p{margin:0 0 13px;color:var(--muted);font-size:10px}.optional-tag{color:var(--blue);font-size:9px;font-weight:900;text-transform:uppercase}.inspector{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto}.inspect-head{padding:19px;background:var(--navy2);color:#fff}.inspect-head small{display:block;color:#9fb5bf;text-transform:uppercase;letter-spacing:.1em;font-weight:900;font-size:9px}.inspect-head h3{margin:7px 0 3px;font-size:19px;line-height:1.2}.inspect-head p{margin:0;color:#adbec5;font-size:11px}.quality{display:inline-block;margin-top:9px;padding:4px 8px;border-radius:999px;background:#1c4449;color:#cdebe7;font-size:10px;font-weight:900}.inspect-empty{padding:27px 20px;text-align:center;color:var(--muted);font-size:12px}.inspect-body{display:none}.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:13px}.score{padding:9px;border:1px solid var(--line);border-radius:9px}.score small{display:block;color:var(--muted);font-size:8px;text-transform:uppercase;font-weight:900}.score strong{font-size:14px}.inspect-section{padding:5px 17px 15px}.inspect-section h4{margin:8px 0;font-size:10px;letter-spacing:.08em;text-transform:uppercase}.signal{padding:8px 0;border-top:1px solid #edf1f2;font-size:11px;color:#40545e}.signal.good:before,.signal.bad:before{display:inline-block;width:16px;font-weight:900}.signal.good:before{content:"+";color:var(--green)}.signal.bad:before{content:"-";color:var(--red)}.rank{padding:10px 0;border-top:1px solid var(--line)}.rank-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:900}.bar{height:5px;background:#edf1f2;border-radius:4px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--teal)}.rank p{margin:5px 0 0;color:var(--muted);font-size:9px}.test-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}.test-title{padding:13px 15px;background:#f2f8f7}.test-title small{color:var(--teal);font-size:9px;font-weight:900;text-transform:uppercase}.test-title h3{margin:3px 0;font-size:15px}.test-title p{margin:0;color:var(--muted);font-size:10px}.test-content{padding:15px}.instruction{display:grid;grid-template-columns:23px 1fr;gap:8px;margin:9px 0;font-size:11px}.instruction b{width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:var(--teal2);color:var(--teal)}.result-options{display:grid;gap:8px;margin-top:13px}.result-option{border:1px solid var(--line);border-radius:9px;padding:10px;font-size:11px}.result-option:has(input:checked){border-color:var(--teal);background:var(--teal2)}.result-option input{margin-right:7px}.matrix{width:100%;border-collapse:collapse;font-size:10px}.matrix th,.matrix td{border-bottom:1px solid var(--line);padding:9px 7px;text-align:left;vertical-align:top}.matrix th{color:var(--muted);font-size:9px;text-transform:uppercase}.matrix .lead{background:#f3f9f8}.verification-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.delta{font-size:9px;color:var(--muted)}.success{padding:13px;border-left:3px solid var(--green);background:#eaf6f1;color:#245d49;border-radius:8px;font-size:11px}.history{margin-top:15px}.history-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0;border-top:1px solid var(--line);font-size:10px}.history-row strong{display:block;font-size:11px}.history-row span{color:var(--muted)}.delete{border:0;background:transparent;color:var(--red);font-weight:900}.toast{position:fixed;z-index:20;left:50%;bottom:20px;transform:translate(-50%,15px);opacity:0;background:var(--navy);color:#fff;padding:10px 14px;border-radius:9px;font-size:11px;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:1100px){.layout{grid-template-columns:190px minmax(0,1fr)}.inspector{grid-column:2;position:static;max-height:none}.rail{grid-row:1/3}.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.top{height:auto;padding:14px 16px}.top-meta{display:none}.layout{display:block;padding:10px}.rail{position:static;height:auto;margin-bottom:10px;display:flex;overflow:auto;gap:5px}.case-label,.case-id,.rail-note{display:none}.nav-step{min-width:112px}.panel{border-radius:13px}.stage-head,.stage-body{padding:18px}.actions{padding:14px 18px}.complaints,.grid,.grid.two,.verification-grid{grid-template-columns:1fr}.inspector{margin-top:10px}.precheck{grid-template-columns:22px 1fr}.precheck select{grid-column:2;width:100%}}
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <div class="logo"><img src="/Hvac-troubleshooter-/icon-192.png" alt="HV"></div>
-    <div>
-      <h1>HVAC Troubleshooter — Pro <span id="versionBadge" class="ver">v8.1</span> <span id="ptBadge" class="badge">PT: —</span> <span class="badge">Learning: ON</span></h1>
-      <div class="tip"><strong>Please use tool to diagnose issues, confirm which diagnosis is correct and click “Send Report” to share data with Administrator.</strong></div>
+<header class="top">
+  <div class="brand"><div class="logo">FS</div><div><h1>FieldSense HVAC Advanced</h1><p>Complaint-led diagnostics and guided verification</p></div></div>
+  <div class="top-meta"><span class="pill">Offline field tool</span><span class="pill">Engine 10.0</span></div>
+</header>
+<div class="layout">
+  <nav class="rail" aria-label="Diagnostic workflow">
+    <div class="case-label">Active case</div><div class="case-id" id="railCase">New case</div>
+    <button class="nav-step active" data-stage="1"><span>1</span>Complaint</button>
+    <button class="nav-step" data-stage="2"><span>2</span>Pre-checks</button>
+    <button class="nav-step" data-stage="3"><span>3</span>Measurements</button>
+    <button class="nav-step" data-stage="4"><span>4</span>Guided test</button>
+    <button class="nav-step" data-stage="5"><span>5</span>Verify repair</button>
+    <div class="rail-note">Follow OEM procedures and site safety rules. This tool organizes evidence; it does not authorize repairs.</div>
+  </nav>
+
+  <main class="panel">
+    <section class="stage active" id="stage1">
+      <div class="stage-head"><div><div class="eyebrow">Stage 1</div><h2>Define the service call</h2><p class="lede">Start with the customer complaint and equipment configuration. The app will request the measurements that best separate likely causes.</p></div></div>
+      <div class="stage-body">
+        <h3 class="section-title">Primary complaint</h3>
+        <div class="complaints" id="complaints">
+          <label class="complaint"><input type="radio" name="complaint" value="no-cooling"><strong>No cooling</strong><small>Equipment runs but delivers little or no cooling.</small></label>
+          <label class="complaint"><input type="radio" name="complaint" value="weak-cooling"><strong>Weak cooling</strong><small>Some cooling, long runtime, poor comfort.</small></label>
+          <label class="complaint"><input type="radio" name="complaint" value="freezing"><strong>Evaporator freezing</strong><small>Ice, frost, or low-suction complaint.</small></label>
+          <label class="complaint"><input type="radio" name="complaint" value="high-head"><strong>High head pressure</strong><small>High discharge pressure or high-pressure trip.</small></label>
+          <label class="complaint"><input type="radio" name="complaint" value="short-cycle"><strong>Short cycling</strong><small>Starts and stops before satisfying demand.</small></label>
+          <label class="complaint"><input type="radio" name="complaint" value="intermittent"><strong>Intermittent fault</strong><small>Problem changes with time or conditions.</small></label>
+        </div>
+        <div class="divider"></div>
+        <h3 class="section-title">Equipment profile</h3>
+        <div class="grid">
+          <div class="field"><label>Case ID <em>optional</em></label><input id="caseId" placeholder="Generated when saved"></div>
+          <div class="field"><label>Manufacturer / model <em>optional</em></label><input id="model" placeholder="Model number"></div>
+          <div class="field"><label>Nominal capacity <em>tons</em></label><input id="tons" type="number" step=".5" placeholder="3"></div>
+          <div class="field"><label>Refrigerant <em>required</em></label><select id="refrig"><option value="R410A">R-410A</option><option value="R22">R-22</option></select></div>
+          <div class="field"><label>Metering device <em>required</em></label><select id="systemType"><option value="txv">TXV</option><option value="eev">EEV</option><option value="fixed">Fixed orifice / piston</option></select></div>
+          <div class="field" id="targetSCField"><label>OEM target subcooling <em>deg F</em></label><input id="targetSC" type="number" placeholder="Data plate"></div>
+          <div class="field" id="targetSHField"><label>OEM target superheat <em>deg F</em></label><input id="targetSH" type="number" placeholder="Charging chart"></div>
+          <div class="field"><label>Outdoor dry bulb <em>deg F</em></label><input id="outdoorDb" type="number" placeholder="95"></div>
+          <div class="field"><label>Indoor return dry bulb <em>deg F</em></label><input id="indoorDb" type="number" placeholder="75"></div>
+          <div class="field"><label>Indoor wet bulb <em>deg F</em></label><input id="indoorWb" type="number" placeholder="63"><div class="help">Especially important for fixed-orifice target superheat.</div></div>
+        </div>
+      </div>
+      <div class="actions"><button class="btn ghost" id="newCase">Reset case</button><button class="btn primary" data-next="2">Continue to pre-checks</button></div>
+    </section>
+
+    <section class="stage" id="stage2">
+      <div class="stage-head"><div><div class="eyebrow">Stage 2</div><h2>Establish safe test conditions</h2><p class="lede">Refrigerant readings are not meaningful until basic operation, airflow, and measurement conditions are verified.</p></div></div>
+      <div class="stage-body">
+        <div class="callout">Stop and follow site procedures for electrical hazards, abnormal noise, burning odor, damaged wiring, or an A2L refrigerant alarm. Do not continue live testing when conditions are unsafe.</div>
+        <div class="divider"></div>
+        <div class="checks">
+          <label class="precheck"><input type="checkbox" id="demand"><div><strong>Confirmed cooling demand</strong><small>Thermostat is calling and setpoint is below space temperature.</small></div><select id="demandState"><option>Pass</option><option>Fail</option><option>Not checked</option></select></label>
+          <label class="precheck"><input type="checkbox" id="runtime"><div><strong>System stabilized</strong><small>Operating long enough for pressures and temperatures to settle.</small></div><select id="runtimeState"><option>Pass</option><option>Fail</option><option>Not checked</option></select></label>
+          <label class="precheck"><input type="checkbox" id="filter"><div><strong>Filter and return path inspected</strong><small>No obvious blockage, collapsed filter, closed return, or severe bypass.</small></div><select id="filterState"><option>Pass</option><option>Fail</option><option>Not checked</option></select></label>
+          <label class="precheck"><input type="checkbox" id="fans"><div><strong>Indoor and outdoor fans verified</strong><small>Correct rotation, expected speed, clean wheel or blade, no obvious recirculation.</small></div><select id="fansState"><option>Pass</option><option>Fail</option><option>Not checked</option></select></label>
+          <label class="precheck"><input type="checkbox" id="coils"><div><strong>Coils visually inspected</strong><small>No severe dirt, ice, blocked coil face, or matted debris.</small></div><select id="coilsState"><option>Pass</option><option>Fail</option><option>Not checked</option></select></label>
+          <label class="precheck"><input type="checkbox" id="probes"><div><strong>Instruments and probes verified</strong><small>Correct refrigerant and units; clamps on clean copper with good contact.</small></div><select id="probesState"><option>Pass</option><option>Fail</option><option>Not checked</option></select></label>
+        </div>
+      </div>
+      <div class="actions"><button class="btn secondary" data-back="1">Back</button><button class="btn primary" data-next="3">Build measurement plan</button></div>
+    </section>
+
+    <section class="stage" id="stage3">
+      <div class="stage-head"><div><div class="eyebrow">Stage 3</div><h2>Collect diagnostic measurements</h2><p class="lede" id="measureIntro">Fields are prioritized for the selected complaint. Enter what you can measure reliably; the evidence panel will show what remains uncertain.</p></div></div>
+      <div class="stage-body">
+        <div class="measurement-groups">
+          <div class="measure-group"><h3>Refrigerant circuit</h3><p>Take pressures and pipe temperatures under the same stabilized condition.</p><div class="grid two">
+            <div class="field"><label>Suction pressure <em>psig *</em></label><input id="suctionP" type="number" placeholder="118"></div>
+            <div class="field"><label>Suction line temperature <em>deg F *</em></label><input id="suctionT" type="number" placeholder="52"></div>
+            <div class="field"><label>Liquid pressure <em>psig *</em></label><input id="liquidP" type="number" placeholder="380"></div>
+            <div class="field"><label>Liquid line temperature <em>deg F *</em></label><input id="liquidT" type="number" placeholder="95"></div>
+            <div class="field"><label>Discharge line temperature <em>deg F</em></label><input id="dischargeT" type="number" placeholder="Optional"></div>
+            <div class="field"><label>Filter-drier temperature drop <em>deg F</em></label><input id="drierDrop" type="number" placeholder="Optional"></div>
+          </div></div>
+          <div class="measure-group"><h3>Airside performance</h3><p id="airPriority">Temperature split supports the diagnosis; static pressure is stronger airflow evidence.</p><div class="grid two">
+            <div class="field"><label>Return air temperature <em>deg F</em></label><input id="returnT" type="number" placeholder="75"></div>
+            <div class="field"><label>Supply air temperature <em>deg F</em></label><input id="supplyT" type="number" placeholder="55"></div>
+            <div class="field"><label>Total external static <em>in. w.c.</em></label><input id="tesp" type="number" step=".01" placeholder=".50"></div>
+            <div class="field"><label>Measured airflow <em>CFM</em></label><input id="airflow" type="number" placeholder="Optional"></div>
+          </div></div>
+          <div class="measure-group"><h3>Electrical and operation <span class="optional-tag">Recommended</span></h3><p>Useful for separating load problems from motor, control, or compressor faults.</p><div class="grid">
+            <div class="field"><label>Supply voltage <em>VAC</em></label><input id="voltage" type="number" placeholder="240"></div>
+            <div class="field"><label>Compressor current <em>amps</em></label><input id="compressorAmps" type="number" step=".1" placeholder="Optional"></div>
+            <div class="field"><label>Compressor RLA <em>amps</em></label><input id="rla" type="number" step=".1" placeholder="Nameplate"></div>
+            <div class="field"><label>Observed runtime <em>minutes</em></label><input id="runtimeMinutes" type="number" placeholder="15"></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="actions"><button class="btn secondary" data-back="2">Back</button><div class="action-group"><button class="btn secondary" id="saveSnapshot">Save snapshot</button><button class="btn primary" id="analyze">Analyze evidence</button></div></div>
+    </section>
+
+    <section class="stage" id="stage4">
+      <div class="stage-head"><div><div class="eyebrow">Stage 4</div><h2>Run the best separating test</h2><p class="lede">Instead of jumping to a repair, record one test result. The hypothesis ranking will update based on what the test supports or contradicts.</p></div></div>
+      <div class="stage-body">
+        <div id="activeTest" class="test-card"></div>
+        <div class="action-group"><button class="btn secondary" id="applyTest">Apply test result</button><button class="btn ghost" id="skipTest">Choose another test</button></div>
+        <div class="divider"></div>
+        <h3 class="section-title">Diagnostic matrix</h3>
+        <div style="overflow:auto"><table class="matrix"><thead><tr><th>Hypothesis</th><th>Supporting evidence</th><th>Conflicting evidence</th><th>Next discriminator</th></tr></thead><tbody id="matrixBody"></tbody></table></div>
+      </div>
+      <div class="actions"><button class="btn secondary" data-back="3">Back to readings</button><button class="btn primary" data-next="5">Proceed to verification</button></div>
+    </section>
+
+    <section class="stage" id="stage5">
+      <div class="stage-head"><div><div class="eyebrow">Stage 5</div><h2>Verify the repair or conclusion</h2><p class="lede">Record what was found, then compare post-service readings. A diagnosis is not complete until the operating condition improves as expected.</p></div></div>
+      <div class="stage-body">
+        <div class="grid two">
+          <div class="field"><label>Confirmed finding <em>required</em></label><select id="confirmed"><option value="">Select verified finding</option></select></div>
+          <div class="field"><label>Action performed <em>summary</em></label><input id="repairAction" placeholder="Cleaned condenser, repaired leak..."></div>
+        </div>
+        <div class="divider"></div>
+        <h3 class="section-title">Post-service readings</h3>
+        <div class="verification-grid">
+          <div class="field"><label>Suction pressure <em>psig</em></label><input id="postSuctionP" type="number"></div>
+          <div class="field"><label>Suction line temp <em>deg F</em></label><input id="postSuctionT" type="number"></div>
+          <div class="field"><label>Liquid pressure <em>psig</em></label><input id="postLiquidP" type="number"></div>
+          <div class="field"><label>Liquid line temp <em>deg F</em></label><input id="postLiquidT" type="number"></div>
+          <div class="field"><label>Return air temp <em>deg F</em></label><input id="postReturnT" type="number"></div>
+          <div class="field"><label>Supply air temp <em>deg F</em></label><input id="postSupplyT" type="number"></div>
+        </div>
+        <div id="verificationResult" style="margin-top:15px"></div>
+        <div class="divider"></div>
+        <h3 class="section-title">Saved cases</h3>
+        <div class="action-group"><button class="btn secondary" id="saveCase">Save completed case</button><button class="btn secondary" id="export">Export CSV</button></div>
+        <div class="history" id="history"></div>
+      </div>
+      <div class="actions"><button class="btn secondary" data-back="4">Back to guided test</button><button class="btn primary" id="verify">Compare and verify</button></div>
+    </section>
+  </main>
+
+  <aside class="inspector">
+    <div class="inspect-head"><small>Live diagnostic picture</small><h3 id="primary">Waiting for measurements</h3><p id="summary">Complete the complaint, pre-checks, and stabilized readings.</p><span class="quality" id="quality">No evidence yet</span></div>
+    <div class="inspect-empty" id="inspectEmpty">The evidence panel will update after analysis. It separates observations from conclusions and shows evidence against the leading hypothesis.</div>
+    <div class="inspect-body" id="inspectBody">
+      <div class="score-grid">
+        <div class="score"><small>Superheat</small><strong id="metricSH">--</strong></div>
+        <div class="score"><small>Subcooling</small><strong id="metricSC">--</strong></div>
+        <div class="score"><small>Air split</small><strong id="metricDT">--</strong></div>
+        <div class="score"><small>Evap sat</small><strong id="metricEvap">--</strong></div>
+        <div class="score"><small>Cond sat</small><strong id="metricCond">--</strong></div>
+        <div class="score"><small>Cond/ambient</small><strong id="metricCOA">--</strong></div>
+      </div>
+      <div class="inspect-section"><h4>Supporting evidence</h4><div id="support"></div><h4>Evidence against / uncertainty</h4><div id="conflict"></div></div>
+      <div class="inspect-section"><h4>Ranked hypotheses</h4><div id="ranking"></div></div>
     </div>
-    <button id="installBtn">Install App</button>
-  </header>
-
-  <div class="main">
-    <div class="panel">
-      <div class="section-title">System & Environment</div>
-      <div class="form-grid">
-        <div>
-          <label title="Pulled from /pt/ if present; otherwise a fallback table">Refrigerant</label>
-          <select id="refrig"></select>
-        </div>
-        <div>
-          <label title="TXV/EEV: target subcool; Fixed: target superheat">System Type</label>
-          <select id="systemType">
-            <option value="txv" selected>TXV (subcool)</option>
-            <option value="eev">EEV (electronic)</option>
-            <option value="fixed">Fixed (superheat)</option>
-          </select>
-        </div>
-        <div><label title="Dry-bulb">Indoor DB (°F)</label><input id="indoorDb" type="number" placeholder="75"></div>
-        <div><label title="If available">Indoor WB (°F)</label><input id="indoorWb" type="number" placeholder="63"></div>
-        <div><label>Outdoor DB (°F)</label><input id="outdoorDb" type="number" placeholder="95"></div>
-        <div><label>Target Superheat (°F)</label><input id="targetSH" type="number" value="10"></div>
-        <div><label>Target Subcool (°F)</label><input id="targetSC" type="number" value="10"></div>
-      </div>
-
-      <hr style="margin:12px 0;border:0;border-top:1px solid var(--line)">
-
-      <div class="section-title">Refrigerant Cycle</div>
-      <div class="panel" style="padding:12px">
-        <img id="cycleImg" src="/Hvac-troubleshooter-/assets/refrigeration_cycle_scaled.jpg?v=8.1" alt="Refrigerant Cycle" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line)">
-      </div>
-
-      <div class="section-title">Field Readings</div>
-      <div class="form-grid">
-        <div><label>Suction Pressure (psig)</label><input id="suctionP" type="number" placeholder="118"></div>
-        <div><label>Suction Line Temp (°F)</label><input id="suctionT" type="number" placeholder="52"></div>
-      </div>
-
-      <div class="section-title">Condenser</div>
-      <div class="form-grid two-col">
-        <div><label>Liquid Pressure (psig)</label><input id="liquidP" type="number" placeholder="380"></div>
-        <div><label>Liquid Line Temp (°F)</label><input id="liquidT" type="number" placeholder="95"></div>
-      </div>
-
-      <div class="section-title">Optional — Air Temps</div>
-      <div class="form-grid">
-        <div><label>Supply Air Temp (°F) — SAT</label><input id="supplyT" type="number" placeholder="optional"></div>
-        <div><label>Return Air Temp (°F) — RAT</label><input id="returnT" type="number" placeholder="optional"></div>
-        <div><label>Delta T (°F) — manual</label><input id="deltaTManual" type="number" placeholder="optional"></div>
-      </div>
-
-      <div class="section-title">Case & Snapshot</div>
-      <div class="form-grid two-col">
-        <div class="case-row">
-          <div>
-            <label>Case ID</label>
-            <input id="caseId" placeholder="e.g., 25-1004-A">
-          </div>
-          <div style="align-self:end;">
-            <button class="btn secondary" id="newCaseBtn" title="Create new Case ID">New ID</button>
-          </div>
-        </div>
-        <div>
-          <label>Snapshot Label</label><input id="snapshotLabelInput" placeholder="T0" value="T0">
-        </div>
-      </div>
-
-      <div id="stickyActions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="btn primary" id="diagBtn">Diagnose</button>
-        <button class="btn secondary" id="coachBtn" title="Next-Best-Action coach">Coach</button>
-        <button class="btn secondary" id="saveBtn">Save Reading</button>
-        <select id="confirmSelect" style="flex:1;min-width:280px;padding:10px;border-radius:12px;border:1px solid var(--line)">
-          <option value="">— Optional: Confirm diagnosis (logs to CSV) —</option>
-        </select>
-        <button class="btn secondary" id="confirmBtn">Confirm</button>
-        <button class="btn secondary" id="compareBtn" title="Compare snapshots in this Case ID">Compare Case</button>
-        <button class="btn secondary" id="chartBtn" title="Show charts for this Case ID">Chart</button>
-      </div>
-
-      <div id="comparePanel" class="panel" style="padding:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="section-title" style="margin:0">Case Compare</div>
-          <button id="compareClose" class="btn secondary" style="padding:6px 10px">Close</button>
-        </div>
-        <div id="compareSummary" class="tip"></div>
-        <div id="compareTableWrap"></div>
-      </div>
-    </div>
-
-    <aside class="panel">
-      <div class="section-title">Diagnosis</div>
-      <div class="panel" style="padding:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Primary Likely Fault</div>
-            <div id="primaryFault" style="font-size:20px;font-weight:900;margin-top:4px">—</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Confidence</div>
-            <div id="confPct" style="font-size:22px;font-weight:900;color:#2f7bff">—%</div>
-            <button id="whyBtn" class="btn secondary" style="margin-top:6px;padding:6px 10px">Why?</button>
-          </div>
-        </div>
-        <div id="confNote" style="margin-top:4px;color:#5a748a;font-size:12px"></div>
-        <div class="metric-row" title="Tap to copy values">
-          <div class="metric" data-copy="#evapSat"><div class="k">Evap Sat</div><div class="v" id="evapSat">— °F</div></div>
-          <div class="metric" data-copy="#condSat"><div class="k">Cond Sat</div><div class="v" id="condSat">— °F</div></div>
-          <div class="metric" data-copy="#superheat"><div class="k">Superheat</div><div class="v" id="superheat">— °F</div></div>
-          <div class="metric" data-copy="#subcool"><div class="k">Subcool</div><div class="v" id="subcool">— °F</div></div>
-          <div class="metric" data-copy="#deltat"><div class="k">ΔT (RAT−SAT)</div><div class="v" id="deltat">— °F</div></div>
-        </div>
-        <div id="notes" style="margin-top:8px;color:#5a748a;font-size:13px"></div>
-        <div style="margin-top:10px">
-          <div style="font-size:12px;color:#5a748a;text-transform:uppercase;font-weight:800">Top Causes</div>
-          <div id="causesList" style="margin-top:6px"></div>
-        </div>
-        <div style="margin-top:10px;font-size:13px;color:#5a748a"><strong>Recommended Next Steps</strong>
-          <ul id="nextSteps" style="margin-top:6px"></ul>
-        </div>
-      </div>
-
-      <!-- Tech info (single, persistent) -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0">
-        <input id="technicianName" placeholder="Technician name"
-               style="padding:8px;border:1px solid #dfeaf5;border-radius:10px">
-        <span id="caseIdBadge" class="badge">Case: —</span>
-      </div>
-
-      <div class="section-title" style="margin-top:10px">History</div>
-      <div class="panel" style="padding:12px">
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px">
-          <button class="btn secondary" id="sendReportBtn">Send Report</button>
-          <button class="btn secondary" id="exportHist">Export History CSV</button>
-          <button class="btn secondary" id="clearHist">Clear</button>
-        </div>
-        <div class="history" id="historyList">No saved readings.</div>
-      </div>
-    </aside>
-  </div>
-
-  <footer style="text-align:center;color:#5a748a;font-size:12px;margin-top:12px">
-    Build <strong>v8.1</strong> · Single New-ID button · Coach close fix · Why modal fix · Compare close toggle · Excel‑friendly CSV · Full confirm list · PT loader hardened.
-  </footer>
+  </aside>
 </div>
-
-<!-- Why Modal -->
-<div id="whyModal">
-  <div id="whyCard" role="dialog" aria-modal="true" aria-labelledby="whyTitle">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <strong id="whyTitle">Why this diagnosis?</strong>
-      <button id="whyClose" class="btn secondary" style="padding:6px 10px">Close</button>
-    </div>
-    <div id="whyContent" style="margin-top:8px;font-size:14px;color:#0a1e2e"></div>
-  </div>
 </div>
-
-<!-- Coach Modal -->
-<div id="coachModal">
-  <div id="coachCard" role="dialog" aria-modal="true" aria-labelledby="coachTitle">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <strong id="coachTitle">Next‑Best‑Action Coach</strong>
-      <button id="coachClose" class="btn secondary" style="padding:6px 10px">Close</button>
-    </div>
-    <div id="coachContent" style="margin-top:8px;font-size:14px;color:#0a1e2e"></div>
-  </div>
-</div>
-
-<!-- Chart (Playback) Modal -->
-<div id="playbackModal">
-  <div id="playbackCard" role="dialog" aria-modal="true" aria-labelledby="playbackTitle">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <strong id="playbackTitle">Case Charts</strong>
-      <button id="playbackClose" class="btn secondary" style="padding:6px 10px">Close</button>
-    </div>
-    <div id="playbackMeta" class="tip" style="margin-top:6px"></div>
-    <div style="margin-top:10px">
-      <canvas id="pbChartPress" width="720" height="260" style="width:100%;max-width:720px;border:1px solid var(--line);border-radius:12px;background:#fff"></canvas>
-      <div style="height:8px"></div>
-      <canvas id="pbChartTemps" width="720" height="260" style="width:100%;max-width:720px;border:1px solid var(--line);border-radius:12px;background:#fff"></canvas>
-      <div class="tip" style="margin-top:6px">Pressures scale 0–600 psig; Temps (SH/SC/ΔT) scale 0–60°F.</div>
-    </div>
-  </div>
-</div>
-
+<div class="toast" id="toast"></div>
 <script>
-(function(){
-  const BUILD_ID = '8.1';
-  const SUBPATH = '/Hvac-troubleshooter-/';
-  const $ = (id)=>document.getElementById(id);
-  const toNum = (v)=>{ if(v===undefined||v===null||String(v).trim()==='') return null; const n=Number(v); return isNaN(n)?null:n; };
-  const round1 = (n)=> n==null?null:Math.round(n*10)/10;
-
-  const BASE_TOL = { sh:4, sc:4, evap:4, dt:5 };
-  const TARGETS = { evapSat:40, deltaT:20 };
-
-  const PT_FALLBACK = {
-    R410A:[{t:30,p:100},{t:35,p:110},{t:40,p:118},{t:45,p:130},{t:50,p:143},{t:55,p:158},{t:60,p:175}],
-    R22:[{t:30,p:56},{t:35,p:61},{t:40,p:66},{t:45,p:72},{t:50,p:78},{t:55,p:85},{t:60,p:92}],
-    R32:[{t:30,p:90},{t:35,p:98},{t:40,p:107},{t:45,p:117},{t:50,p:128},{t:55,p:140},{t:60,p:153}],
-    R454B:[{t:30,p:88},{t:35,p:96},{t:40,p:105},{t:45,p:115},{t:50,p:126},{t:55,p:138},{t:60,p:151}]
-  };
-  const PT = {}; const ptMeta = {}; const PT_BADGE = $('ptBadge');
-
-  function timeout(ms){ return new Promise((_,rej)=> setTimeout(()=>rej(new Error('timeout')),ms)); }
-  async function getJSON(url){
-    try {
-      const res = await Promise.race([fetch(url,{cache:'reload'}), timeout(4500)]);
-      if(!res || !res.ok) throw new Error('http '+(res && res.status));
-      const text = await res.text();
-      return JSON.parse(text);
-    } catch(e) { throw e; }
-  }
-
-  async function initRefrigerants(){
-    const sel = $('refrig'); if(!sel) return;
-    const defaults = ['R410A','R22','R32','R454B'];
-    sel.innerHTML='';
-    defaults.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); });
-    sel.value='R410A';
-    if (PT_BADGE){ PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
-
-    try{
-      const idx = await getJSON(SUBPATH+'pt/index.json?v='+BUILD_ID);
-      const names = Array.isArray(idx.refrigerants) && idx.refrigerants.length ? idx.refrigerants.map(x=>x.name) : defaults;
-      if (names.length) {
-        sel.innerHTML='';
-        names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n.replace('R','R-'); sel.appendChild(o); });
-        sel.value = names.includes('R410A') ? 'R410A' : names[0];
-      }
-      let csvFound = false;
-      for (const item of (idx.refrigerants||[])){
-        try{
-          const tab = await getJSON(SUBPATH+'pt/'+item.file+'?v='+BUILD_ID);
-          if (tab && Array.isArray(tab.table) && tab.table.length){ PT[item.name]=tab.table; ptMeta[item.name]=item.source||'CSV'; csvFound = true; }
-        } catch(e){
-          const fn = item.name; if(PT_FALLBACK[fn]){ PT[fn]=PT_FALLBACK[fn]; ptMeta[fn]='Fallback'; }
-        }
-      }
-      if (PT_BADGE){ if(csvFound){ PT_BADGE.textContent='PT: CSV'; PT_BADGE.classList.remove('bad'); } else { PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); } }
-    }catch(e){
-      ['R410A','R22','R32','R454B'].forEach(n=>{ if(!PT[n]){ PT[n]=PT_FALLBACK[n]; ptMeta[n]='Fallback'; } });
-      if (PT_BADGE){ PT_BADGE.textContent='PT: Fallback'; PT_BADGE.classList.add('bad'); }
-    }
-  }
-
-  function tFromPsig(ref, psig){
-    const tab = PT[ref] || PT_FALLBACK['R410A']; if(!tab || !tab.length || psig==null) return null;
-    if(psig <= tab[0].p) return tab[0].t;
-    if(psig >= tab[tab.length-1].p) return tab[tab.length-1].t;
-    for(let i=0;i<tab.length-1;i++){ const a=tab[i], b=tab[i+1]; if(psig>=a.p && psig<=b.p){ const f=(psig-a.p)/(b.p-a.p); return a.t + f*(b.t-a.t); } }
-    return null;
-  }
-
-  function computeConfidence(det, d, TOL){
-    let score=0,max=0;
-    max+=40;
-    if(det.superheat!=null && d.targetSH!=null) score += Math.max(0, 24*(1 - Math.min(Math.abs(det.superheat-d.targetSH)/(TOL.sh*2),1)));
-    if(det.subcool!=null && d.targetSC!=null)  score += Math.max(0, 24*(1 - Math.min(Math.abs(det.subcool -d.targetSC)/(TOL.sc*2),1)));
-    max+=32;
-    if(det.deltaT!=null) score += Math.max(0, 22*(1 - Math.min(Math.abs(det.deltaT-TARGETS.deltaT)/(TOL.dt*2),1)));
-    else score += 12;
-    max+=28;
-    if(det.evapSat!=null) score += Math.max(0, 18*(1 - Math.min(Math.abs(det.evapSat-TARGETS.evapSat)/(TOL.evap*2),1)));
-    if(det.condSat!=null) score += 10;
-    let bonus=0;
-    const shNear=(det.superheat!=null && d.targetSH!=null)? Math.abs(det.superheat-d.targetSH)<=Math.max(1,TOL.sh-1):false;
-    const scNear=(det.subcool !=null && d.targetSC!=null)? Math.abs(det.subcool -d.targetSC)<=Math.max(1,TOL.sc-1):false;
-    const dtNear=(det.deltaT !=null)? Math.abs(det.deltaT - TARGETS.deltaT)<=Math.max(2,TOL.dt-1):false;
-    const evNear=(det.evapSat!=null)? Math.abs(det.evapSat - TARGETS.evapSat)<=Math.max(2,TOL.evap-1):false;
-    if(shNear) bonus+=6; if(scNear) bonus+=6; if(dtNear) bonus+=6; if(evNear) bonus+=6;
-    score += bonus; max += 24;
-    return Math.round((score/max)*100);
-  }
-
-  function diagnoseAll(d){
-    const evapSat = tFromPsig(d.refrig, d.suctionP);
-    const condSat = tFromPsig(d.refrig, d.liquidP);
-    const superheat = (d.suctionT!=null && evapSat!=null)? d.suctionT - evapSat : null;
-    const subcool  = (d.liquidT!=null && condSat!=null)?  condSat - d.liquidT : null;
-    let deltaT = null, deltaTSource='—';
-    if (d.deltaTManual!=null){ deltaT = d.deltaTManual; deltaTSource='manual'; }
-    else if (d.supplyT!=null && d.returnT!=null){ deltaT = d.returnT - d.supplyT; deltaTSource='calc'; }
-
-    const det = {
-      evapSat: round1(evapSat), condSat: round1(condSat),
-      superheat: superheat==null?null:round1(superheat),
-      subcool: subcool==null?null:round1(subcool),
-      deltaT: deltaT==null?null:round1(deltaT), deltaTSource
-    };
-
-    const causes = {
-      'System operating properly':0,
-      'Undercharge (low refrigerant)':8,
-      'Overcharge (too much refrigerant)':6,
-      'Restriction — metering device / drier':6,
-      'Low airflow across evaporator':6,
-      'Non-condensables (air in system)':4,
-      'Compressor mechanical issue (valves/leak)':4,
-      'Equipment mismatch (ODU>IDU)':4,
-      'TXV overfeeding (adjust superheat)':0,
-      'TXV underfeeding (adjust superheat)':0,
-      'EEV overfeeding (check control/sensors)':0,
-      'EEV underfeeding (check control/sensors)':0
-    };
-
-    const rules = [];
-    const othersOK = (det.subcool!=null && Math.abs(det.subcool - (d.targetSC??10)) <= BASE_TOL.sc) &&
-                     (det.evapSat!=null && Math.abs(det.evapSat - 40) <= BASE_TOL.evap) &&
-                     (det.deltaT==null || Math.abs(det.deltaT - 20) <= BASE_TOL.dt);
-
-    if((d.systemType==='txv' || d.systemType==='eev') && det.superheat!=null && d.targetSH!=null && othersOK){
-      const shErr = det.superheat - d.targetSH;
-      if (shErr < -BASE_TOL.sh){ rules.push('Low SH with SC/Evap/ΔT near target ⇒ overfeeding'); causes[d.systemType==='eev' ? 'EEV overfeeding (check control/sensors)' : 'TXV overfeeding (adjust superheat)'] += 22; }
-      else if (shErr > BASE_TOL.sh){ rules.push('High SH with SC/Evap/ΔT near target ⇒ underfeeding'); causes[d.systemType==='eev' ? 'EEV underfeeding (check control/sensors)' : 'TXV underfeeding (adjust superheat)'] += 22; }
-    }
-
-    if(det.superheat!=null && d.targetSH!=null){
-      const ds = det.superheat - d.targetSH;
-      if(ds >= 6){ causes['Undercharge (low refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; rules.push('High SH suggests underfeed/undercharge or restriction'); }
-      else if(ds <= -6){ causes['Overcharge (too much refrigerant)'] += 12; causes['Restriction — metering device / drier'] += 4; rules.push('Low SH suggests overfeed/overcharge'); }
-    }
-    if(det.subcool!=null && d.targetSC!=null){
-      const dc = det.subcool - d.targetSC;
-      if(dc >= 6){ causes['Overcharge (too much refrigerant)'] += 14; causes['Restriction — metering device / drier'] += 6; rules.push('High SC suggests overcharge or condenser flooding'); }
-      else if(dc <= -4){ causes['Undercharge (low refrigerant)'] += 12; rules.push('Low SC suggests undercharge or flashing'); }
-    }
-
-    if(d.suctionP!=null && d.liquidP!=null){
-      if(d.suctionP < 105 && d.liquidP < 320){ causes['Undercharge (low refrigerant)'] += 12; rules.push('Low low-side & low high-side ⇒ likely undercharge'); }
-      if(d.suctionP < 105 && d.liquidP > 380){ causes['Low airflow across evaporator'] += 10; causes['Non-condensables (air in system)'] += 8; rules.push('Low suction + high head ⇒ airflow issue or non-condensables'); }
-      if(d.suctionP > 160 && d.liquidP < 330){ causes['Compressor mechanical issue (valves/leak)'] += 16; rules.push('High suction + normal/low head ⇒ compressor valves/leak'); }
-      if(d.suctionP > 160 && d.liquidP > 480){ causes['Overcharge (too much refrigerant)'] += 10; causes['Non-condensables (air in system)'] += 8; rules.push('High suction + very high head ⇒ overcharge or air'); }
-    }
-
-    if(det.deltaT!=null){
-      if(det.deltaT < 12){ causes['Low airflow across evaporator'] += 18; rules.push('ΔT < 12°F ⇒ airflow/latent load issue first'); }
-      else if(det.deltaT > 28){ causes['Low airflow across evaporator'] += 8; rules.push('ΔT > 28°F ⇒ check airflow / sizing'); }
-    }
-
-    let ranked = Object.keys(causes).map(k=>({cause:k,score:causes[k]})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
-    const nearOk = (det.evapSat!=null && Math.abs(det.evapSat-40)<=BASE_TOL.evap) &&
-                   (det.superheat!=null && d.targetSH!=null && Math.abs(det.superheat-d.targetSH)<=BASE_TOL.sh) &&
-                   (det.subcool!=null && d.targetSC!=null && Math.abs(det.subcool-d.targetSC)<=BASE_TOL.sc) &&
-                   (det.deltaT==null || Math.abs(det.deltaT-20)<=BASE_TOL.dt);
-    if (nearOk) ranked.unshift({cause:'System operating properly', score:100});
-    const total = ranked.reduce((s,i)=>s+i.score,0)||1; ranked.forEach(a=>a.pct=Math.round((a.score/total)*100));
-    ranked = ranked.slice(0,3);
-
-    const primary = ranked[0] ? {cause: ranked[0].cause, pct: ranked[0].pct, modelConf: computeConfidence(det, d, BASE_TOL)} : {cause:'Insufficient data', pct:0, modelConf:0};
-    return {details:det, ranked, primary, rulesFired:rules, input:d};
-  }
-
-  function reasoningLines(det, d){
-    const lines = [];
-    if(det.evapSat!=null) lines.push(`Evap Sat: ${det.evapSat}°F (~40°F)`);
-    if(det.condSat!=null) lines.push(`Cond Sat: ${det.condSat}°F`);
-    if(det.superheat!=null && d.targetSH!=null) lines.push(`Superheat: ${det.superheat}°F (target ${d.targetSH}°F)`);
-    if(det.subcool!=null  && d.targetSC!=null) lines.push(`Subcool: ${det.subcool}°F (target ${d.targetSC}°F)`);
-    if(det.deltaT!=null) lines.push(`ΔT (${det.deltaTSource}): ${det.deltaT}°F (target 20°F)`);
-    return lines;
-  }
-
-  const HIST_KEY='hvac_hist_v7_4b';
-  const TECH_KEY='hvac_tech_name';
-  const loadHist=()=>{ try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return []} };
-  const saveHist=(a)=> localStorage.setItem(HIST_KEY, JSON.stringify(a));
-
-  function populateConfirmOptions(r){
-    const ALL_CAUSES = [
-      'System operating properly','Undercharge (low refrigerant)','Overcharge (too much refrigerant)',
-      'Restriction — metering device / drier','Low airflow across evaporator','Non-condensables (air in system)',
-      'Compressor mechanical issue (valves/leak)','Equipment mismatch (ODU>IDU)',
-      'TXV overfeeding (adjust superheat)','TXV underfeeding (adjust superheat)',
-      'EEV overfeeding (check control/sensors)','EEV underfeeding (check control/sensors)'
-    ];
-    const sel = $('confirmSelect'); if(!sel) return;
-    const keep = sel.value;
-    sel.innerHTML='';
-    const optBlank = document.createElement('option'); optBlank.value=''; optBlank.textContent='— Optional: Confirm diagnosis (logs to CSV) —'; sel.appendChild(optBlank);
-    const seen = new Set();
-    const add = (label)=>{ if(!label || seen.has(label)) return; seen.add(label); const o=document.createElement('option'); o.value=label; o.textContent=label; sel.appendChild(o); };
-    if (r && r.primary && r.primary.cause) add(r.primary.cause);
-    if (r && Array.isArray(r.ranked)) r.ranked.forEach(x=> add(x.cause));
-    ALL_CAUSES.forEach(add);
-    sel.value = keep || '';
-  }
-
-  function renderResults(r){
-    const pf=$('primaryFault'), cp=$('confPct'), note=$('confNote');
-    if (pf) pf.textContent = r.primary.cause;
-    if (cp) { let conf=r.primary.pct||0; if(r.primary.cause.toLowerCase().includes('operating properly') && conf<95) conf=95; cp.textContent = conf+'%'; }
-    if (note) {
-      const lines = [];
-      if (r.details.deltaT==null) lines.push('ΔT missing (enter manual or SAT/RAT)');
-      else lines.push(r.details.deltaTSource==='manual' ? 'ΔT provided by tech' : 'ΔT computed from SAT/RAT');
-      if (r.details.superheat!=null && r.input.targetSH!=null && Math.abs(r.details.superheat-r.input.targetSH)<=BASE_TOL.sh) lines.push('SH near target');
-      if (r.details.subcool!=null && r.input.targetSC!=null && Math.abs(r.details.subcool-r.input.targetSC)<=BASE_TOL.sc) lines.push('SC near target');
-      if (r.details.evapSat!=null && Math.abs(r.details.evapSat-40)<=BASE_TOL.evap) lines.push('Evap sat near 40°F');
-      lines.push('Model confidence: '+(r.primary.modelConf||0)+'%');
-      note.textContent = lines.join(' • ');
-    }
-    const set = (id,val)=>{ const el=$(id); if(el) el.textContent = (val==null?'—':val+' °F'); };
-    set('evapSat', r.details.evapSat); set('condSat', r.details.condSat); set('superheat', r.details.superheat); set('subcool', r.details.subcool);
-    const dtEl=$('deltat'); if(dtEl) dtEl.textContent = (r.details.deltaT==null?'—':r.details.deltaT+' °F');
-
-    const list=$('causesList'); if(list){ list.innerHTML='';
-      const nums = reasoningLines(r.details, r.input);
-      r.ranked.forEach(it=>{
-        const row=document.createElement('div'); row.className='cause';
-        const why = document.createElement('details');
-        const bullets = nums.map(s=>`<li>${s}</li>`).join('');
-        why.innerHTML = `<summary>${it.cause} — ${it.pct}%</summary><ul style="margin:6px 0 0 18px">${bullets}</ul>`;
-        row.appendChild(why);
-        const bar=document.createElement('div'); bar.className='bar'; bar.innerHTML=`<i style="width:${Math.max(6, it.pct)}%"></i>`; row.appendChild(bar);
-        list.appendChild(row);
-      });
-    }
-    populateConfirmOptions(r);
-  }
-
-  function currentSnapshotLabel(){ const i=$('snapshotLabelInput'); return (i && i.value.trim())?i.value.trim():'T0'; }
-
-  function ensureOption(selectEl, value){
-    if (!selectEl) return;
-    const exists = Array.from(selectEl.options).some(o=>o.value===value);
-    if (!exists){ const o=document.createElement('option'); o.value=value; o.textContent=value.replace('R','R-'); selectEl.appendChild(o); }
-  }
-
-  function readInputs(){
-    return {
-      refrig: ($('refrig')||{}).value || 'R410A', systemType: ($('systemType')||{}).value || 'txv',
-      indoorDb: toNum(($('indoorDb')||{}).value), indoorWb: toNum(($('indoorWb')||{}).value), outdoorDb: toNum(($('outdoorDb')||{}).value),
-      targetSH: toNum(($('targetSH')||{}).value) ?? 10, targetSC: toNum(($('targetSC')||{}).value) ?? 10,
-      suctionP: toNum(($('suctionP')||{}).value), suctionT: toNum(($('suctionT')||{}).value),
-      liquidP: toNum(($('liquidP')||{}).value), liquidT: toNum(($('liquidT')||{}).value),
-      supplyT: toNum(($('supplyT')||{}).value), returnT: toNum(($('returnT')||{}).value),
-      deltaTManual: toNum(($('deltaTManual')||{}).value),
-      caseId: (($('caseId')||{}).value||'').trim(),
-      snapshotLabel: currentSnapshotLabel()
-    };
-  }
-
-  function applySnapshotToForm(s){
-    const setVal = (id, val)=>{ const el=$(id); if(el!=null && val!=null) el.value = String(val); };
-    if (s.refrig) ensureOption($('refrig'), s.refrig);
-    setVal('refrig', s.refrig);
-    setVal('systemType', s.systemType);
-    setVal('indoorDb', s.indoorDb); setVal('indoorWb', s.indoorWb); setVal('outdoorDb', s.outdoorDb);
-    setVal('targetSH', s.targetSH); setVal('targetSC', s.targetSC);
-    setVal('suctionP', s.suctionP); setVal('suctionT', s.suctionT);
-    setVal('liquidP', s.liquidP);  setVal('liquidT', s.liquidT);
-    setVal('supplyT', s.supplyT);   setVal('returnT', s.returnT);
-    setVal('deltaTManual', s.deltaT);
-    const sl = $('snapshotLabelInput'); if (sl) sl.value = s.snapshotLabel || sl.value || 'T0';
-    const ci = $('caseId'); if (ci) ci.value = s.caseId || ci.value || '';
-    const d=readInputs(); const r=diagnoseAll(d); renderResults(r);
-  }
-
-  function renderHist(){
-    const list=$('historyList'); const a=loadHist(); if(!list) return;
-    if(a.length===0){ list.textContent='No saved readings.'; return; }
-    list.innerHTML='';
-    a.forEach((h,i)=>{
-      const d=document.createElement('div'); d.className='hist';
-      d.innerHTML = `<div><strong>${h.refrig||''}</strong> · ${h.time||''} · <em>${h.caseId||'—'}/${h.snapshotLabel||'—'}</em><br><span style="color:#5a748a;font-size:12px">SP:${h.suctionP||''} ST:${h.suctionT||''} · LP:${h.liquidP||''} LT:${h.liquidT||''} · ΔT:${h.deltaT??'—'} (${h.deltaTSource||'—'}) · ${h.actualDiagnosis || h.suggestedDiagnosis || ''} · Conf:${h.confPct||0}%</span></div>`;
-      const del=document.createElement('button'); del.textContent='Del'; del.className='btn secondary'; del.style.padding='6px'; del.style.borderRadius='8px';
-      del.onclick=()=>{ const x=loadHist(); x.splice(i,1); saveHist(x); renderHist(); };
-      d.appendChild(del); list.appendChild(d);
-    });
-  }
-
-  function buildCompareTable(rows){
-    const cols = [
-      ['snapshot','Snapshot'],
-      ['time','Time'],
-      ['suctionP','Suction P (psig)'],
-      ['liquidP','Liquid P (psig)'],
-      ['evapSat','Evap Sat (°F)'],
-      ['condSat','Cond Sat (°F)'],
-      ['superheat','Superheat (°F)'],
-      ['subcool','Subcool (°F)'],
-      ['deltaT','ΔT (°F)'],
-      ['suggestedDiagnosis','Suggested'],
-      ['actualDiagnosis','Confirmed'],
-      ['confPct','Conf (%)']
-    ];
-    const header = '<tr>' + cols.map(c=>`<th>${c[1]}</th>`).join('') + '</tr>';
-    const body = rows.map(r=>{
-      const snap = r.snapshotLabel || '—';
-      const vals = {
-        snapshot: snap,
-        time: r.time || '—',
-        suctionP: r.suctionP ?? '—',
-        liquidP: r.liquidP ?? '—',
-        evapSat: r.evapSat ?? '—',
-        condSat: r.condSat ?? '—',
-        superheat: r.superheat ?? '—',
-        subcool: r.subcool ?? '—',
-        deltaT: r.deltaT ?? '—',
-        suggestedDiagnosis: r.suggestedDiagnosis || '—',
-        actualDiagnosis: r.actualDiagnosis || '—',
-        confPct: r.confPct ?? '—'
-      };
-      return '<tr>' + cols.map(c=>`<td>${vals[c[0]]}</td>`).join('') + '</tr>';
-    }).join('');
-    return '<table class="compare">'+header+body+'</table>';
-  }
-
-  // Simple canvas plotting helpers
-  function drawGrid(ctx, w, h, xPad, yPad, yMax, yStep, label){
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = '#0a1e2e'; ctx.font = '12px Inter, system-ui, Arial';
-    ctx.fillText(label, 8, 16);
-    ctx.strokeStyle = '#dfeaf5'; ctx.lineWidth = 1;
-    for (let y=0; y<=yMax; y+=yStep) {
-      const yy = h - yPad - (y / yMax) * (h - 2*yPad);
-      ctx.beginPath(); ctx.moveTo(xPad, yy); ctx.lineTo(w - xPad/2, yy); ctx.stroke();
-      ctx.fillStyle = '#56728a'; ctx.fillText(String(y), 6, yy - 2);
-    }
-  }
-  function plotSeries(ctx, w, h, xPad, yPad, yMax, values, color, label, xLabels){
-    const n = values.length; if (!n) return;
-    const xStep = (w - 2*xPad) / Math.max(1, n-1);
-    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
-    values.forEach((v,i)=>{
-      if (v==null) return;
-      const x = xPad + i * xStep;
-      const y = h - yPad - Math.max(0, Math.min(1, v / yMax)) * (h - 2*yPad);
-      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    });
-    ctx.stroke();
-    ctx.fillStyle = color;
-    values.forEach((v,i)=>{
-      if (v==null) return;
-      const x = xPad + i * xStep;
-      const y = h - yPad - Math.max(0, Math.min(1, v / yMax)) * (h - 2*yPad);
-      ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
-    });
-    // X labels
-    ctx.fillStyle = '#56728a'; ctx.font = '11px Inter, system-ui, Arial';
-    xLabels.forEach((lbl,i)=>{
-      const x = xPad + i * xStep; ctx.fillText(lbl, x-12, h-6);
-    });
-    // Legend
-    ctx.fillStyle = color; ctx.fillRect(w-140, 10, 10, 10);
-    ctx.fillStyle = '#0a1e2e'; ctx.fillText(label, w-125, 20);
-  }
-
-  function openChart(){
-    const caseInput = ($('caseId')||{}).value||'';
-    if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
-    const all = loadHist().filter(r=> (r.caseId||'').trim() === caseInput.trim());
-    if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
-    const labelOrder = {'t0':0,'t+10':1,'t+20':2,'T0':0,'T+10':1,'T+20':2};
-    all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
-    const labels = all.map(r=> (r.snapshotLabel || '').toString());
-    const suction = all.map(r=> r.suctionP!=null? Number(r.suctionP): null);
-    const liquid  = all.map(r=> r.liquidP!=null?  Number(r.liquidP):  null);
-    const sh = all.map(r=> r.superheat!=null? Number(r.superheat): null);
-    const sc = all.map(r=> r.subcool!=null?  Number(r.subcool):  null);
-    const dt = all.map(r=> r.deltaT!=null?   Number(r.deltaT):   null);
-
-    const press = document.getElementById('pbChartPress'); const tctx = press.getContext('2d');
-    const temps = document.getElementById('pbChartTemps'); const uctx = temps.getContext('2d');
-    const w = press.width, h = press.height; const xPad=40, yPad=26;
-
-    // Draw charts
-    drawGrid(tctx, w, h, xPad, yPad, 600, 100, 'Pressures (psig)');
-    plotSeries(tctx, w, h, xPad, yPad, 600, suction, '#1d9df5', 'Suction', labels);
-    plotSeries(tctx, w, h, xPad, yPad, 600, liquid,  '#ff6a3d', 'Liquid', labels);
-
-    drawGrid(uctx, w, h, xPad, yPad, 60, 10, 'Temps (°F)');
-    plotSeries(uctx, w, h, xPad, yPad, 60, sh, '#2f7bff', 'Superheat', labels);
-    plotSeries(uctx, w, h, xPad, yPad, 60, sc, '#31c48d', 'Subcool', labels);
-    plotSeries(uctx, w, h, xPad, yPad, 60, dt, '#7d5bed', 'ΔT', labels);
-
-    $('playbackMeta').textContent = `Showing ${all.length} snapshot(s) for Case ${caseInput}`;
-    $('playbackModal').style.display='block';
-  }
-
-  function newCaseId(){
-    const d = new Date();
-    const y = String(d.getFullYear()).slice(-2);
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    const rand = Math.floor(Math.random()*900)+100; // 3-digit
-    return `${y}-${m}${day}-${rand}`;
-  }
-
-  function renderCompare(){
-    const caseInput = ($('caseId')||{}).value||'';
-    if (!caseInput.trim()){ alert('Enter a Case ID first.'); return; }
-    const all = loadHist().filter(r=> (r.caseId||'').trim() === caseInput.trim());
-    if (!all.length){ alert('No snapshots saved for this Case ID yet.'); return; }
-    const labelOrder = {'t0':0,'t+10':1,'t+20':2,'T0':0,'T+10':1,'T+20':2};
-    all.sort((a,b)=> (labelOrder[a.snapshotLabel]??99) - (labelOrder[b.snapshotLabel]??99) || (new Date(a.time)-new Date(b.time)));
-    $('compareTableWrap').innerHTML = buildCompareTable(all);
-    $('compareSummary').textContent = `Comparing ${all.length} snapshot(s) for Case ${caseInput}`;
-    $('comparePanel').style.display='block';
-  }
-
-  function initButtons(){
-    $('diagBtn').onclick = ()=>{
-      const d=readInputs();
-      if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Required: suction pressure, liquid pressure, suction line temp, and liquid line temp.'); return; }
-      const r=diagnoseAll(d); renderResults(r);
-    };
-
-    $('saveBtn').onclick = ()=>{
-      const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter required values before saving.'); return; }
-      const r=diagnoseAll(d);
-      const entry = {
-        time: new Date().toLocaleString(), appVersion:'v8.1', refrig:d.refrig, systemType:d.systemType,
-        indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
-        suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
-        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
-        suggestedDiagnosis:r.primary.cause, actualDiagnosis:'', confPct:r.primary.pct, learningOn:true, testerInitials:'',
-        rulesFired:(r.rulesFired||[]).join(' | '),
-        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0'
-      };
-      const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); alert('Saved to history.'); renderHist();
-    };
-
-    $('exportHist').onclick = ()=>{
-      const rows=loadHist(); if(rows.length===0){alert('No history to export.'); return;}
-      const esc=(v)=>{ if(v==null) return ''; const s=String(v); return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-      const order=["time","appVersion","caseId","snapshotLabel","refrig","systemType","indoorDb","indoorWb","outdoorDb","targetSH","targetSC","suctionP","suctionT","liquidP","liquidT","supplyT","returnT","deltaT","deltaTSource","evapSat","condSat","superheat","subcool","suggestedDiagnosis","actualDiagnosis","confPct","learningOn","testerInitials","rulesFired"];
-      const header=order.join(','); const body=rows.map(r=>order.map(k=>esc(r[k])).join(',')).join('\r\n'); const csv='\ufeff'+header+'\r\n'+body;
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hvac_history_v8_1.csv'; a.click();
-    };
-
-    $('clearHist').onclick = ()=>{ if(confirm('Clear all history?')){ localStorage.removeItem(HIST_KEY); renderHist(); } };
-
-    $('confirmBtn').onclick = ()=>{
-      const sel = $('confirmSelect'); if (!sel || !sel.value) { alert('Choose a diagnosis to confirm.'); return; }
-      const d=readInputs(); const r=diagnoseAll(d);
-      const entry = { time: new Date().toLocaleString(), appVersion:'v8.1', refrig:d.refrig, systemType:d.systemType,
-        indoorDb:d.indoorDb, indoorWb:d.indoorWb, outdoorDb:d.outdoorDb, targetSH:d.targetSH, targetSC:d.targetSC,
-        suctionP:d.suctionP, suctionT:d.suctionT, liquidP:d.liquidP, liquidT:d.liquidT, supplyT:d.supplyT, returnT:d.returnT,
-        evapSat:r.details.evapSat, condSat:r.details.condSat, superheat:r.details.superheat, subcool:r.details.subcool, deltaT:r.details.deltaT, deltaTSource:r.details.deltaTSource,
-        suggestedDiagnosis:r.primary.cause, actualDiagnosis: sel.value, confPct:r.primary.pct, learningOn:true, testerInitials:'', rulesFired:(r.rulesFired||[]).join(' | '),
-        caseId: d.caseId || '', snapshotLabel: d.snapshotLabel || 'T0' };
-      const a=loadHist(); a.unshift(entry); if(a.length>1000) a.pop(); saveHist(a); renderHist(); alert('Confirmation recorded.');
-    };
-
-    $('compareBtn').onclick = renderCompare;
-    $('compareClose').onclick = ()=>{ $('comparePanel').style.display='none'; };
-
-    $('chartBtn').onclick = openChart;
-
-    // Modals: close on button, backdrop, and Esc
-    const whyModal = $('whyModal'); const coachModal = $('coachModal'); const pbModal = $('playbackModal');
-    $('whyBtn').onclick = ()=>{
-      const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter the four required readings first.'); return; }
-      const r=diagnoseAll(d);
-      const nums = reasoningLines(r.details, r.input).map(s=>`<li>${s}</li>`).join('');
-      const rules = (r.rulesFired||[]).map(x=>`<li>${x}</li>`).join('') || '<li>(no major rule triggers)</li>';
-      $('whyContent').innerHTML = `<div><strong>Numbers used</strong><ul>${nums}</ul></div><div style="margin-top:8px"><strong>Rules that influenced this result</strong><ul>${rules}</ul></div>`;
-      whyModal.style.display='block';
-    };
-    $('whyClose').onclick = ()=> whyModal.style.display='none';
-    whyModal.onclick = (e)=>{ if(e.target===whyModal) whyModal.style.display='none'; };
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && whyModal.style.display==='block') whyModal.style.display='none'; });
-
-    $('coachBtn').onclick = ()=>{
-      const d=readInputs(); if(d.suctionP==null||d.liquidP==null||d.suctionT==null||d.liquidT==null){ alert('Enter the four required readings first.'); return; }
-      // Simple coach: shows three next-best actions (static for now)
-      const actions = [
-        'Measure evap airflow (increase fan 10% and observe ΔT)',
-        'Weigh charge ±4–8 oz and watch SH/SC shift',
-        'Inspect TXV screen / drier for restriction'
-      ];
-      $('coachContent').innerHTML = '<ul style="margin:0;padding-left:18px">'+actions.map(a=>`<li>${a}</li>`).join('')+'</ul>';
-      coachModal.style.display='block';
-    };
-    $('coachClose').onclick = ()=> coachModal.style.display='none';
-    coachModal.onclick = (e)=>{ if(e.target===coachModal) coachModal.style.display='none'; };
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && coachModal.style.display==='block') coachModal.style.display='none'; });
-
-    $('playbackClose').onclick = ()=> pbModal.style.display='none';
-    pbModal.onclick = (e)=>{ if(e.target===pbModal) pbModal.style.display='none'; };
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && pbModal.style.display==='block') pbModal.style.display='none'; });
-
-    // New Case ID (single button)
-    $('newCaseBtn').onclick = ()=>{ const id=newCaseId(); $('caseId').value=id; $('caseIdBadge').textContent='Case: '+id; };
-
-    // Persist tech name
-    const tech = $('technicianName');
-    if (tech){
-      const saved = localStorage.getItem(TECH_KEY)||'';
-      if (!tech.value && saved) tech.value=saved;
-      tech.addEventListener('change', ()=> localStorage.setItem(TECH_KEY, tech.value.trim()));
-    }
-  }
-
-  async function boot(){
-    // PWA install prompt
-    let deferredPrompt; const installBtn = $('installBtn');
-    window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt = e; if(installBtn) installBtn.style.display='inline-block'; });
-    if (installBtn) installBtn.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.style.display='none'; });
-
-    await initRefrigerants();
-    renderHist();
-    initButtons();
-  }
-  boot();
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id), num=id=>{const e=$(id);if(!e||e.disabled||e.value.trim()==="")return null;const n=Number(e.value);return Number.isFinite(n)?n:null}, round=n=>n==null?null:Math.round(n*10)/10;
+const PT={R410A:[[20,78.3],[30,100.7],[40,124.2],[50,151],[60,181.8],[70,216.5],[80,255.3],[90,298.6],[100,346.6],[110,399.6],[120,458.2],[130,522.7]],R22:[[20,43],[30,54.9],[40,68.5],[50,84],[60,102],[70,121.4],[80,143.6],[90,168.4],[100,196],[110,226.4],[120,260],[130,296.7]]};
+const NAMES=["Normal operation / no refrigeration fault confirmed","Low refrigerant inventory or flashing liquid","Liquid-line or metering-device restriction","Low indoor airflow or low evaporator load","Condenser heat-rejection problem","Excess refrigerant inventory or overfeeding","Weak compression or low system load","Measurement, setup, or sensor error"];
+const TESTS={
+charge:{title:"Separate low charge from liquid-line restriction",why:"Both can starve the evaporator, but the condenser liquid inventory and localized temperature drop distinguish them.",steps:["Inspect the liquid line for flashing before the metering device.","Measure temperature on both sides of the filter-drier under steady load.","Leak-check likely joints and inspect for oil residue."],options:[["leak","Leak evidence or flashing with low subcooling"],["restriction","Localized drier or liquid-line temperature drop"],["none","Neither result is present"]]},
+airflow:{title:"Measure airflow instead of inferring it",why:"Temperature split changes with humidity and load. Static pressure or measured CFM is stronger evidence.",steps:["Measure total external static pressure at the correct test ports.","Compare fan speed and static pressure with the OEM blower table.","Inspect filter, wheel, coil, dampers, returns, and registers."],options:[["low-air","Airflow is below OEM requirement or static is high"],["air-ok","Airflow is within OEM requirement"],["unknown","Could not obtain reliable airflow"]]},
+condenser:{title:"Prove condenser heat rejection",why:"Dirty coils and fan problems can imitate excess charge and raise head pressure.",steps:["Inspect and clean both coil faces as needed.","Verify fan rotation, speed, blade condition, and discharge recirculation.","Recheck condensing temperature over ambient after correction."],options:[["cond-fail","Condenser airflow or coil problem found"],["cond-ok","Condenser heat rejection checks good"],["unknown","Test was inconclusive"]]},
+feed:{title:"Verify metering-device feed and controls",why:"A starved or flooded evaporator can come from the valve, bulb, sensors, equalizer, or control signal.",steps:["Inspect TXV bulb location, contact, insulation, and equalizer condition.","For EEV systems, compare sensor readings and commanded valve position.","Check for a repeatable pressure or temperature drop at the suspected restriction."],options:[["feed-fail","Metering or sensor problem found"],["feed-ok","Feed controls and restriction checks pass"],["unknown","Test was inconclusive"]]},
+compression:{title:"Separate low load from weak compression",why:"Both may produce low pressure separation, but load response and compressor electrical behavior differ.",steps:["Confirm indoor and outdoor load conditions.","Compare compressor amperage with nameplate and OEM operating data.","Observe whether pressure separation responds normally as load changes."],options:[["weak","Pressure separation remains weak under correct load"],["load","Low load explains the readings"],["unknown","Test was inconclusive"]]},
+measurement:{title:"Validate the measurements",why:"Incorrect refrigerant, gauge zero, units, or probe contact can create impossible calculated values.",steps:["Verify refrigerant and pressure units.","Confirm instrument zero and service-port connection.","Reposition temperature clamps on clean copper and insulate the suction probe."],options:[["fixed","A measurement or setup problem was corrected"],["valid","Measurements were confirmed valid"],["unknown","Could not confirm measurements"]]}
+};
+const KEY="fieldsense_hvac_v10";let currentStage=1,analysis=null,testIndex=0,testResults=[];
+function sat(ref,p){const t=PT[ref];if(!t||p<t[0][1]||p>t.at(-1)[1])return null;for(let i=0;i<t.length-1;i++){const a=t[i],b=t[i+1];if(p>=a[1]&&p<=b[1])return a[0]+(p-a[1])/(b[1]-a[1])*(b[0]-a[0]);}return null}
+function complaint(){return document.querySelector('input[name="complaint"]:checked')?.value||""}
+function profile(){const fixed=$("systemType").value==="fixed";return{complaint:complaint(),caseId:$("caseId").value.trim(),model:$("model").value.trim(),tons:num("tons"),refrig:$("refrig").value,systemType:$("systemType").value,targetSH:fixed?num("targetSH"):null,targetSC:fixed?null:num("targetSC"),outdoorDb:num("outdoorDb"),indoorDb:num("indoorDb"),indoorWb:num("indoorWb")}}
+function readings(prefix=""){const post=prefix==="post",id=name=>post?"post"+name[0].toUpperCase()+name.slice(1):name;return{suctionP:num(id("suctionP")),suctionT:num(id("suctionT")),liquidP:num(id("liquidP")),liquidT:num(id("liquidT")),returnT:num(id("returnT")),supplyT:num(id("supplyT")),dischargeT:post?null:num("dischargeT"),drierDrop:post?null:num("drierDrop"),tesp:post?null:num("tesp"),airflow:post?null:num("airflow"),voltage:post?null:num("voltage"),compressorAmps:post?null:num("compressorAmps"),rla:post?null:num("rla"),runtimeMinutes:post?null:num("runtimeMinutes")}}
+function prechecks(){return["demand","runtime","filter","fans","coils","probes"].map(k=>({key:k,checked:$(k).checked,state:$(k+"State").value}))}
+function state(v,target,tol,low,high){if(v==null)return"unknown";if(target!=null)return v>target+tol?"high":v<target-tol?"low":"normal";return v<low?"low":v>high?"high":"screen-normal"}
+function calculate(p,r){const evap=round(sat(p.refrig,r.suctionP)),cond=round(sat(p.refrig,r.liquidP));return{evap,cond,sh:evap==null||r.suctionT==null?null:round(r.suctionT-evap),sc:cond==null||r.liquidT==null?null:round(cond-r.liquidT),dt:r.returnT==null||r.supplyT==null?null:round(r.returnT-r.supplyT),coa:cond==null||p.outdoorDb==null?null:round(cond-p.outdoorDb),ampPct:r.compressorAmps==null||r.rla==null?null:round(r.compressorAmps/r.rla*100),cfmTon:r.airflow==null||p.tons==null?null:round(r.airflow/p.tons)}}
+function diagnose(p,r,prior=[]){const m=calculate(p,r),scores={},support={},conflict={};const add=(n,v,text,type="support")=>{scores[n]=(scores[n]||0)+v;(type==="support"?support:conflict)[n]=[...((type==="support"?support:conflict)[n]||[]),text]};const sh=state(m.sh,p.targetSH,4,5,20),sc=state(m.sc,p.targetSC,4,5,15);
+if(sh==="high"&&sc==="low")add(NAMES[1],34,"High superheat with low subcooling is a starved-system pattern.");
+if(sh==="high"&&(sc==="normal"||sc==="screen-normal"||sc==="high"))add(NAMES[2],32,"High superheat without low subcooling suggests retained liquid upstream.");
+if(sh==="low"&&(sc==="normal"||sc==="screen-normal"||sc==="low"))add(NAMES[3],27,"Low superheat without liquid backup supports checking evaporator load and airflow.");
+if(sh==="low"&&sc==="high")add(NAMES[5],30,"Low superheat with high subcooling indicates heavy feed or liquid backup.");
+if((sh==="normal"||sh==="screen-normal")&&sc==="normal")add(NAMES[0],35,p.systemType==="fixed"?"Superheat and subcooling are close to the entered OEM targets.":"Subcooling is close to the entered OEM target and superheat is not at an extreme.");
+if((sh==="normal"||sh==="screen-normal")&&sc==="high")add(NAMES[4],24,"High subcooling with non-high superheat supports a high-side heat-rejection check.");
+if((sh==="normal"||sh==="screen-normal")&&sc==="low")add(NAMES[1],24,"Low subcooling indicates limited liquid inventory or flashing.");
+if(p.systemType==="fixed"&&sh==="high")add(NAMES[1],17,"Fixed-orifice superheat is high; compare with the OEM target chart.");
+if(p.systemType==="fixed"&&sh==="low")add(NAMES[3],17,"Fixed-orifice superheat is low; check load and airflow before charge.");
+if(m.evap!=null&&m.evap<32)add(NAMES[3],20,"Evaporator saturation is below freezing.");
+if(m.evap!=null&&m.evap>55)add(NAMES[6],11,"Evaporator saturation is unusually warm for typical comfort cooling.");
+if(m.coa!=null&&m.coa>40)add(NAMES[4],20,"Condensing temperature is more than 40 F over outdoor ambient.");
+if(m.coa!=null&&m.coa<10)add(NAMES[6],15,"Condensing temperature is less than 10 F over outdoor ambient.");
+if(m.dt!=null&&m.dt>24)add(NAMES[3],11,"High air split supports an airflow or low-load check.");
+if(m.dt!=null&&m.dt<14)add(NAMES[6],9,"Low air split may indicate low capacity, high airflow, or high latent load.");
+if(r.drierDrop!=null&&r.drierDrop>=3)add(NAMES[2],28,"Filter-drier temperature drop is 3 F or greater.");
+if(r.tesp!=null&&r.tesp>.8)add(NAMES[3],24,"Total external static pressure is high.");
+if(m.cfmTon!=null&&m.cfmTon<325)add(NAMES[3],28,"Measured airflow is below 325 CFM per ton.");
+if(m.cfmTon!=null&&m.cfmTon>=350)add(NAMES[3],-12,"Measured airflow is not low.", "conflict");
+if(m.ampPct!=null&&m.ampPct<50)add(NAMES[6],10,"Compressor current is low relative to RLA; load and compression require comparison.");
+if(m.evap==null||m.cond==null)add(NAMES[7],35,"A pressure is outside the supported PT range.");
+prechecks().forEach(x=>{if(x.state==="Fail"){if(x.key==="filter"||x.key==="fans"||x.key==="coils")add(x.key==="fans"&&p.complaint==="high-head"?NAMES[4]:NAMES[3],25,`${x.key} pre-check failed.`);else add(NAMES[7],18,`${x.key} pre-check failed.`)}});prior.forEach(x=>applyTestEffect(x,add));
+let ranked=Object.keys(scores).map(name=>({name,score:scores[name],support:support[name]||[],conflict:conflict[name]||[]})).sort((a,b)=>b.score-a.score);if(!ranked.length)ranked=[{name:"More evidence required",score:0,support:["Enter the four refrigeration readings and applicable OEM target."],conflict:[]}];ranked=ranked.slice(0,5);
+ranked.forEach(h=>{if(h.name===NAMES[1]&&sc!=="low")h.conflict.push("Subcooling is not low, which weakens simple undercharge.");if(h.name===NAMES[3]&&r.tesp==null&&r.airflow==null)h.conflict.push("No static-pressure or measured-airflow evidence is available.");if(h.name===NAMES[4]&&m.coa!=null&&m.coa<=40)h.conflict.push("Condensing-over-ambient is not unusually high.");});
+const completeness=[r.suctionP,r.suctionT,r.liquidP,r.liquidT].filter(v=>v!=null).length+(p.outdoorDb!=null?1:0)+(m.dt!=null?1:0)+((p.systemType==="fixed"?p.targetSH:p.targetSC)!=null?2:0);const gap=ranked[0].score-(ranked[1]?.score||0),quality=completeness>=7&&gap>=10?"Strong direction":completeness>=5?"Moderate direction":"Limited direction";return{profile:p,readings:r,metrics:m,ranked,lead:ranked[0],quality,time:new Date().toISOString()}}
+function applyTestEffect(x,add){if(x.value==="leak")add(NAMES[1],42,"Leak evidence or liquid flashing was confirmed by the guided test.");if(x.value==="restriction")add(NAMES[2],45,"A localized liquid-line restriction was confirmed.");if(x.value==="low-air")add(NAMES[3],42,"Measured airflow or static pressure confirmed an airside problem.");if(x.value==="air-ok")add(NAMES[3],-18,"Airflow tested within OEM requirements.","conflict");if(x.value==="cond-fail")add(NAMES[4],42,"Condenser heat rejection problem was confirmed.");if(x.value==="cond-ok")add(NAMES[4],-18,"Condenser heat rejection checks passed.","conflict");if(x.value==="feed-fail")add(NAMES[2],42,"Metering-device or control problem was confirmed.");if(x.value==="feed-ok")add(NAMES[2],-16,"Metering-device and restriction checks passed.","conflict");if(x.value==="weak")add(NAMES[6],42,"Weak pressure separation persisted under correct load.");if(x.value==="load")add(NAMES[6],24,"Low load explained the pressure pattern.");if(x.value==="fixed")add(NAMES[7],42,"A measurement or setup problem was found.");if(x.value==="valid")add(NAMES[7],-20,"Measurements were independently confirmed.","conflict")}
+function testFor(name){if(name.includes("refrigerant"))return"charge";if(name.includes("restriction"))return"feed";if(name.includes("airflow"))return"airflow";if(name.includes("Condenser")||name.includes("Excess"))return"condenser";if(name.includes("compression"))return"compression";if(name.includes("Measurement"))return"measurement";return"airflow"}
+function fmt(v,suffix=" F"){return v==null?"--":v+suffix}
+function renderAnalysis(){if(!analysis)return;$("inspectEmpty").style.display="none";$("inspectBody").style.display="block";$("primary").textContent=analysis.lead.name;$("summary").textContent="Leading category, not a confirmed fault. Use the next test to challenge it.";$("quality").textContent=analysis.quality;$("metricSH").textContent=fmt(analysis.metrics.sh);$("metricSC").textContent=fmt(analysis.metrics.sc);$("metricDT").textContent=fmt(analysis.metrics.dt);$("metricEvap").textContent=fmt(analysis.metrics.evap);$("metricCond").textContent=fmt(analysis.metrics.cond);$("metricCOA").textContent=fmt(analysis.metrics.coa);$("support").innerHTML=(analysis.lead.support.length?analysis.lead.support:["No strong supporting signal yet."]).map(x=>`<div class="signal good">${esc(x)}</div>`).join("");$("conflict").innerHTML=(analysis.lead.conflict.length?analysis.lead.conflict:["No direct conflicting evidence entered."]).map(x=>`<div class="signal bad">${esc(x)}</div>`).join("");const max=Math.max(...analysis.ranked.map(x=>x.score),1);$("ranking").innerHTML=analysis.ranked.map((x,i)=>`<div class="rank"><div class="rank-top"><span>${i+1}. ${esc(x.name)}</span><span>${Math.max(0,x.score)} pts</span></div><div class="bar"><i style="width:${Math.max(4,Math.max(0,x.score)/max*100)}%"></i></div><p>${esc(x.support[0]||"Insufficient supporting evidence")}</p></div>`).join("");renderMatrix();renderTest()}
+function renderMatrix(){$("matrixBody").innerHTML=analysis.ranked.map((x,i)=>`<tr class="${i===0?"lead":""}"><td><strong>${esc(x.name)}</strong></td><td>${esc(x.support.join(" ")||"None entered")}</td><td>${esc(x.conflict.join(" ")||"None entered")}</td><td>${esc(TESTS[testFor(x.name)].title)}</td></tr>`).join("")}
+function renderTest(){const keys=[...new Set(analysis.ranked.map(x=>testFor(x.name)))],key=keys[testIndex%keys.length],t=TESTS[key];$("activeTest").dataset.test=key;$("activeTest").innerHTML=`<div class="test-title"><small>Best next discriminator</small><h3>${esc(t.title)}</h3><p>${esc(t.why)}</p></div><div class="test-content">${t.steps.map((s,i)=>`<div class="instruction"><b>${i+1}</b><span>${esc(s)}</span></div>`).join("")}<div class="result-options">${t.options.map(o=>`<label class="result-option"><input type="radio" name="testResult" value="${o[0]}">${esc(o[1])}</label>`).join("")}</div></div>`}
+function analyzeNow(){const p=profile(),r=readings();let ok=true;["suctionP","suctionT","liquidP","liquidT"].forEach(id=>{const bad=num(id)==null;$(id).classList.toggle("invalid",bad);ok=ok&&!bad});if(!p.complaint)return toast("Select the primary complaint first.");if(!ok)return toast("Enter the four required refrigeration readings.");const failed=prechecks().filter(x=>x.state==="Fail");if(failed.some(x=>["demand","runtime","probes"].includes(x.key))&&!confirm("A demand, stabilization, or instrument pre-check failed. These conditions can invalidate the analysis. Continue anyway?"))return;analysis=diagnose(p,r,testResults);renderAnalysis();showStage(4)}
+function showStage(n){currentStage=n;document.querySelectorAll(".stage").forEach(x=>x.classList.toggle("active",x.id==="stage"+n));document.querySelectorAll(".nav-step").forEach(x=>{const s=Number(x.dataset.stage);x.classList.toggle("active",s===n);x.classList.toggle("done",s<n)});scrollTo({top:0,behavior:"smooth"})}
+function updateTargets(){const fixed=$("systemType").value==="fixed";$("targetSHField").style.display=fixed?"":"none";$("targetSCField").style.display=fixed?"none":"";$("targetSH").disabled=!fixed;$("targetSC").disabled=fixed}
+function updatePlan(){const c=complaint();$("measureIntro").textContent=c==="freezing"?"Prioritize airflow, static pressure, evaporator saturation, and superheat. Ice must be fully removed before final readings.":c==="high-head"?"Prioritize condenser condition, fan operation, outdoor ambient, liquid pressure, and subcooling.":"Collect stabilized refrigeration and airside readings. Optional electrical values help separate load from component faults.";$("airPriority").textContent=c==="freezing"?"Static pressure or measured CFM is high-priority evidence for a freezing complaint.":"Temperature split supports the diagnosis; static pressure is stronger airflow evidence."}
+function ensureCase(){if(!$("caseId").value.trim())$("caseId").value=makeId();$("railCase").textContent=$("caseId").value.trim()}
+function makeId(){const d=new Date();return`${String(d.getFullYear()).slice(-2)}-${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}-${Math.floor(100+Math.random()*900)}`}
+function verify(){if(!analysis)return toast("Analyze a baseline set of readings first.");const post=readings("post"),calc=calculate(profile(),post);if([post.suctionP,post.suctionT,post.liquidP,post.liquidT].some(v=>v==null))return toast("Enter the four post-service refrigeration readings.");const before=analysis.metrics,lines=[`Superheat: ${fmt(before.sh)} to ${fmt(calc.sh)}`,`Subcooling: ${fmt(before.sc)} to ${fmt(calc.sc)}`,`Air split: ${fmt(before.dt)} to ${fmt(calc.dt)}`];$("verificationResult").innerHTML=`<div class="success"><strong>Post-service comparison recorded.</strong><br>${lines.map(esc).join(" | ")}<br>Confirm the complaint is resolved and values meet exact OEM requirements before closing the case.</div>`;analysis.verification={readings:post,metrics:calc,action:$("repairAction").value.trim(),confirmed:$("confirmed").value,time:new Date().toISOString()}}
+function saveCase(){if(!analysis)return toast("No analyzed case to save.");ensureCase();analysis.profile.caseId=$("caseId").value.trim();analysis.testResults=testResults;analysis.verification=analysis.verification||{confirmed:$("confirmed").value,action:$("repairAction").value.trim()};const rows=load();rows.unshift(structuredClone(analysis));localStorage.setItem(KEY,JSON.stringify(rows.slice(0,100)));renderHistory();toast("Completed case saved.")}
+function saveSnapshot(){ensureCase();if([num("suctionP"),num("suctionT"),num("liquidP"),num("liquidT")].some(v=>v==null))return toast("Enter the four refrigeration readings first.");const row={...diagnose(profile(),readings(),testResults),snapshot:true};const rows=load();rows.unshift(row);localStorage.setItem(KEY,JSON.stringify(rows.slice(0,100)));renderHistory();toast("Diagnostic snapshot saved.")}
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}}
+function renderHistory(){const rows=load(),el=$("history");if(!rows.length){el.innerHTML='<p class="lede">No v10 cases saved yet.</p>';return}el.innerHTML=rows.slice(0,8).map((r,i)=>`<div class="history-row"><div><strong>${esc(r.profile?.caseId||"Unassigned")} - ${esc(r.lead?.name||"Snapshot")}</strong><span>${new Date(r.time).toLocaleString()}${r.verification?.confirmed?" | "+esc(r.verification.confirmed):""}</span></div><button class="delete" data-i="${i}">Delete</button></div>`).join("");el.querySelectorAll(".delete").forEach(b=>b.onclick=()=>{const a=load();a.splice(Number(b.dataset.i),1);localStorage.setItem(KEY,JSON.stringify(a));renderHistory()})}
+function exportCsv(){const rows=load();if(!rows.length)return toast("No saved v10 cases to export.");const head=["time","caseId","complaint","model","refrigerant","meteringDevice","suctionP","suctionT","liquidP","liquidT","superheat","subcooling","airSplit","leadingHypothesis","evidenceQuality","confirmedFinding","repairAction"];const data=rows.map(r=>[r.time,r.profile?.caseId,r.profile?.complaint,r.profile?.model,r.profile?.refrig,r.profile?.systemType,r.readings?.suctionP,r.readings?.suctionT,r.readings?.liquidP,r.readings?.liquidT,r.metrics?.sh,r.metrics?.sc,r.metrics?.dt,r.lead?.name,r.quality,r.verification?.confirmed,r.verification?.action]);const csv=[head,...data].map(row=>row.map(cell).join(",")).join("\r\n"),a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="fieldsense-v10-cases.csv";a.click();URL.revokeObjectURL(a.href)}
+function reset(){if(!confirm("Clear the active case? Saved cases will remain."))return;document.querySelectorAll("input").forEach(x=>{if(x.type==="radio"||x.type==="checkbox")x.checked=false;else x.value=""});document.querySelectorAll("select").forEach(x=>x.selectedIndex=0);analysis=null;testResults=[];testIndex=0;$("railCase").textContent="New case";$("inspectEmpty").style.display="block";$("inspectBody").style.display="none";$("primary").textContent="Waiting for measurements";$("summary").textContent="Complete the complaint, pre-checks, and stabilized readings.";$("quality").textContent="No evidence yet";updateTargets();showStage(1)}
+function cell(v){const s=v==null?"":String(v);return/[",\r\n]/.test(s)?`"${s.replaceAll('"','""')}"`:s}function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}function toast(s){const e=$("toast");e.textContent=s;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),2200)}
+document.querySelectorAll("[data-next]").forEach(b=>b.onclick=()=>{if(Number(b.dataset.next)===2&&!complaint())return toast("Select the primary complaint.");if(Number(b.dataset.next)===3)updatePlan();if(Number(b.dataset.next)===5&&!analysis)return toast("Analyze readings first.");showStage(Number(b.dataset.next))});document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>showStage(Number(b.dataset.back)));document.querySelectorAll(".nav-step").forEach(b=>b.onclick=()=>{const n=Number(b.dataset.stage);if(n>=4&&!analysis)return toast("Analyze readings before opening this stage.");showStage(n)});document.querySelectorAll('input[name="complaint"]').forEach(x=>x.onchange=updatePlan);$("systemType").onchange=updateTargets;$("caseId").oninput=()=>{$("railCase").textContent=$("caseId").value||"New case"};$("analyze").onclick=analyzeNow;$("applyTest").onclick=()=>{const v=document.querySelector('input[name="testResult"]:checked')?.value;if(!v)return toast("Record the test result first.");testResults.push({test:$("activeTest").dataset.test,value:v,time:new Date().toISOString()});analysis=diagnose(profile(),readings(),testResults);renderAnalysis();toast("Evidence updated from the test result.")};$("skipTest").onclick=()=>{testIndex++;renderTest()};$("verify").onclick=verify;$("saveCase").onclick=saveCase;$("saveSnapshot").onclick=saveSnapshot;$("export").onclick=exportCsv;$("newCase").onclick=reset;
+$("confirmed").innerHTML='<option value="">Select verified finding</option>'+NAMES.map(x=>`<option>${esc(x)}</option>`).join("")+'<option>Other verified finding</option>';updateTargets();renderHistory();
 })();
 </script>
-<script src="./send-report.v81.js?v=6"></script>
 </body>
 </html>
