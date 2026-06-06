@@ -1,31 +1,60 @@
-// service-worker.js — v7.2.0
-const CACHE = 'hvac-pro-v7.2.1-lite';
-const ROOT = '/Hvac-troubleshooter-/';
-const CORE = [ROOT, ROOT+'index.html', ROOT+'manifest.json', ROOT+'icon-192.png', ROOT+'icon-512.png', ROOT+'pt/index.json'];
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)));
-});
-self.addEventListener('activate', (e) => {
-  e.waitUntil(self.clients.claim());
-});
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-  if (!url.pathname.startsWith(ROOT)) return;
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then((cached) => {
-      const fetchPromise = fetch(e.request).then((network) => {
-        if(network && network.status === 200 && network.type === 'basic') {
-          caches.open(CACHE).then(c => c.put(e.request, network.clone()));
-        }
-        return network;
-      }).catch(()=>cached);
-      return cached || fetchPromise;
-    })
+const CACHE_NAME = "fieldsense-hvac-v10.1.0";
+const APP_FILES = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png"
+];
+
+self.addEventListener("install", event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_FILES))
+      .then(() => self.skipWaiting())
   );
 });
-// Listen for skipWaiting messages
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET") return;
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
   }
+
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(response => {
+        if (!response || response.status !== 200 || response.type === "opaque") {
+          return response;
+        }
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        return response;
+      });
+    })
+  );
 });
